@@ -1,0 +1,22 @@
+// =============================================================================
+// Main.jack  —  CS207 Tensor Library  (entry point)
+// =============================================================================
+// The Jack compiler requires exactly one class named Main with a static
+// function named main().
+//
+// This file is the program entry point.  Edit the calls below to run:
+//   • TensorTest.runAll()         — automated correctness checks
+//   • TensorBench.runAll()        — performance benchmarks  (slow: ~5-10 min)
+//   • LinearRegressionDemo.run()  — gradient descent demo on a toy dataset
+// =============================================================================
+
+class Main {
+
+    function void main() {
+        // do TensorTest.runAll();         // uncomment to run 38 unit tests first
+        // do TensorBench.runAll();        // uncomment to run full benchmarks (~5-10 min)
+        do LinearRegressionDemo.run();  // gradient descent visual demo
+
+        return;
+    }
+}

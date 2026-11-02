@@ -1,0 +1,345 @@
+// =============================================================================
+// TensorOps.jack  —  CS207 Tensor Library
+// =============================================================================
+// All six tensor operations, each in two versions:
+//   v0 – naive  (get/set accessors, readable baseline)
+//   v2 – optimised (direct Array access + 4-element loop unrolling)
+//
+// The caller always allocates the output Tensor (no allocation inside ops).
+//
+// Naming convention:
+//   addV0, addV2        — add two tensors
+//   subV0, subV2        — subtract two tensors
+//   mulScalarV0, mulScalarV2   — multiply every element by scalar s
+//   divScalarV0, divScalarV2   — integer-divide every element by scalar s
+//   matmulV0, matmulV2         — matrix multiply
+//   transposeV0, transposeV2   — transpose
+// =============================================================================
+
+class TensorOps {
+
+    // =========================================================================
+    // ADD
+    // =========================================================================
+
+    // naive add
+    function void addV0(Tensor a, Tensor b, Tensor out) {
+        var int i, n;
+        let n = a.getSize();
+        let i = 0;
+        while (i < n) {
+            do out.set(i, a.get(i) + b.get(i));
+            let i = i + 1;
+        }
+        return;
+    }
+
+    // optimised add
+    function void addV2(Tensor a, Tensor b, Tensor out) {
+        var Array da, db, dc;
+        var int i, n, n4;
+        let da = a.getData();
+        let db = b.getData();
+        let dc = out.getData();
+        let n  = a.getSize();
+        let n4 = n - (n & 3);   // largest multiple of 4 <= n  (& 3 == mod 4)
+
+        // Main unrolled body — 4 elements per iteration
+        let i = 0;
+        while (i < n4) {
+            let dc[i]     = da[i]     + db[i];
+            let dc[i + 1] = da[i + 1] + db[i + 1];
+            let dc[i + 2] = da[i + 2] + db[i + 2];
+            let dc[i + 3] = da[i + 3] + db[i + 3];
+            let i = i + 4;
+        }
+        // Tail — handles remainder elements (0-3)
+        while (i < n) {
+            let dc[i] = da[i] + db[i];
+            let i = i + 1;
+        }
+        return;
+    }
+
+    // =========================================================================
+    // SUBTRACT
+    // =========================================================================
+
+    // naive subtract
+    function void subV0(Tensor a, Tensor b, Tensor out) {
+        var int i, n;
+        let n = a.getSize();
+        let i = 0;
+        while (i < n) {
+            do out.set(i, a.get(i) - b.get(i));
+            let i = i + 1;
+        }
+        return;
+    }
+
+    // optimised subtract- same technique as optimised add
+    function void subV2(Tensor a, Tensor b, Tensor out) {
+        var Array da, db, dc;
+        var int i, n, n4;
+        let da = a.getData();
+        let db = b.getData();
+        let dc = out.getData();
+        let n  = a.getSize();
+        let n4 = n - (n & 3);
+
+        let i = 0;
+        while (i < n4) {
+            let dc[i]     = da[i]     - db[i];
+            let dc[i + 1] = da[i + 1] - db[i + 1];
+            let dc[i + 2] = da[i + 2] - db[i + 2];
+            let dc[i + 3] = da[i + 3] - db[i + 3];
+            let i = i + 4;
+        }
+        while (i < n) {
+            let dc[i] = da[i] - db[i];
+            let i = i + 1;
+        }
+        return;
+    }
+
+    // =========================================================================
+    // SCALAR MULTIPLY
+    // =========================================================================
+
+    /** v0 Naive scalar multiply. Uses Math.multiply per element. */
+    function void mulScalarV0(Tensor a, int s, Tensor out) {
+        var int i, n;
+        let n = a.getSize();
+        let i = 0;
+        while (i < n) {
+            do out.set(i, Math.multiply(a.get(i), s));
+            let i = i + 1;
+        }
+        return;
+    }
+
+    /**
+     * v2 Optimised scalar multiply.
+     * Uses an early-exit shift-and-add routine (TensorOps.fastMul) so that
+     * the loop exits as soon as the high bits of the multiplier are consumed,
+     * instead of always iterating all 16 bit positions.
+     * Direct Array access removes the get/set call overhead.
+     */
+    function void mulScalarV2(Tensor a, int s, Tensor out) {
+        var Array da, dc;
+        var int i, n;
+        let da = a.getData();
+        let dc = out.getData();
+        let n  = a.getSize();
+        let i  = 0;
+        while (i < n) {
+            let dc[i] = TensorOps.fastMul(da[i], s);
+            let i = i + 1;
+        }
+        return;
+    }
+
+    /**
+     * Early-exit signed 16-bit multiply.
+     * Iterates through the bits of |b| from LSB upward and stops once the
+     * remaining portion of b is zero — a significant win when b is small.
+     * Sign is corrected after the unsigned loop.
+     */
+    function int fastMul(int a, int b) {
+        var int result, shiftedA, absB, sign;
+        let sign = 1;
+        if (b < 0) {
+            let sign = -1;
+            let absB = -b;
+        } else {
+            let absB = b;
+        }
+        let result   = 0;
+        let shiftedA = a;
+        while (absB > 0) {
+            if (absB & 1) {
+                let result = result + shiftedA;
+            }
+            let shiftedA = shiftedA + shiftedA;   // logical left shift by 1
+            let absB     = absB / 2;               // logical right shift by 1
+        }
+        if (sign = -1) { let result = -result; }
+        return result;
+    }
+
+    // =========================================================================
+    // SCALAR DIVIDE
+    // =========================================================================
+
+    /**
+     * v0 Naive scalar divide (integer division truncating toward zero).
+     * Precondition: s ≠ 0.
+     */
+    function void divScalarV0(Tensor a, int s, Tensor out) {
+        var int i, n;
+        let n = a.getSize();
+        let i = 0;
+        while (i < n) {
+            do out.set(i, Math.divide(a.get(i), s));
+            let i = i + 1;
+        }
+        return;
+    }
+
+    /**
+     * v2 Optimised scalar divide.
+     * Direct Array access removes get/set overhead; the division kernel itself
+     * is still Math.divide (no faster option on Hack without HW divide).
+     * Expect a smaller speedup than add/sub because the divide is the bottleneck.
+     */
+    function void divScalarV2(Tensor a, int s, Tensor out) {
+        var Array da, dc;
+        var int i, n;
+        let da = a.getData();
+        let dc = out.getData();
+        let n  = a.getSize();
+        let i  = 0;
+        while (i < n) {
+            let dc[i] = Math.divide(da[i], s);
+            let i = i + 1;
+        }
+        return;
+    }
+
+    // =========================================================================
+    // MATRIX MULTIPLY
+    // =========================================================================
+
+    /**
+     * v0 Naive matmul.
+     * a is m×k, b is k×p, out is m×p.
+     * Precondition: out must NOT alias a or b.
+     * Uses get/set and per-element index multiply.
+     */
+    function void matmulV0(Tensor a, Tensor b, Tensor out) {
+        var int m, k, p, r, c, t, sum;
+        let m = a.getRows();
+        let k = a.getCols();
+        let p = b.getCols();
+        let r = 0;
+        while (r < m) {
+            let c = 0;
+            while (c < p) {
+                let sum = 0;
+                let t = 0;
+                while (t < k) {
+                    let sum = sum + (a.at(r, t) * b.at(t, c));
+                    let t = t + 1;
+                }
+                do out.put(r, c, sum);
+                let c = c + 1;
+            }
+            let r = r + 1;
+        }
+        return;
+    }
+
+    /**
+     * v2 Optimised matmul.
+     * Key improvements over v0:
+     *   1. Direct Array access — no get/set call overhead.
+     *   2. Running row pointer for a (rowA = r*k steps once per outer iter).
+     *   3. Accumulator in a local variable (no repeated put calls in inner loop).
+     *   4. fastMul for each inner product term.
+     * Column access on b still requires a stride step (t*p + c), but the
+     * row stride is pulled out of the innermost loop.
+     */
+    function void matmulV2(Tensor a, Tensor b, Tensor out) {
+        var Array da, db, dc;
+        var int m, k, p;
+        var int r, c, t;
+        var int sum, rowA, colB, aOffset, bOffset;
+        let da = a.getData();
+        let db = b.getData();
+        let dc = out.getData();
+        let m  = a.getRows();
+        let k  = a.getCols();
+        let p  = b.getCols();
+
+        let r    = 0;
+        let rowA = 0;          // r * k  — updated by addition instead of multiply
+        while (r < m) {
+            let c = 0;
+            while (c < p) {
+                let sum     = 0;
+                let aOffset = rowA;    // rowA + t  in inner loop
+                let bOffset = c;       // t*p + c   in inner loop
+                let t = 0;
+                while (t < k) {
+                    let sum     = sum + TensorOps.fastMul(da[aOffset], db[bOffset]);
+                    let aOffset = aOffset + 1;
+                    let bOffset = bOffset + p;
+                    let t       = t + 1;
+                }
+                let dc[(r * p) + c] = sum;
+                let c = c + 1;
+            }
+            let rowA = rowA + k;
+            let r    = r + 1;
+        }
+        return;
+    }
+
+    // =========================================================================
+    // TRANSPOSE
+    // =========================================================================
+
+    /**
+     * v0 Naive transpose.
+     * a is m×n, out is n×m.
+     * Precondition: out must NOT alias a.
+     */
+    function void transposeV0(Tensor a, Tensor out) {
+        var int m, n, r, c;
+        let m = a.getRows();
+        let n = a.getCols();
+        let r = 0;
+        while (r < m) {
+            let c = 0;
+            while (c < n) {
+                do out.put(c, r, a.at(r, c));
+                let c = c + 1;
+            }
+            let r = r + 1;
+        }
+        return;
+    }
+
+    /**
+     * v2 Optimised transpose.
+     * Reads the source in row-major order (cache-friendly on larger machines
+     * and contiguous on Hack), writes to the destination with a fixed stride
+     * of m (the source row count = destination col count).
+     * Direct Array access + pointer arithmetic replaces index multiplies.
+     */
+    function void transposeV2(Tensor a, Tensor out) {
+        var Array da, dc;
+        var int m, n, r, c;
+        var int srcOffset, dstOffset, dstStride;
+        let da = a.getData();
+        let dc = out.getData();
+        let m  = a.getRows();
+        let n  = a.getCols();
+        let dstStride = m;         // writing out[c][r]: stride between rows of out = m
+
+        let r         = 0;
+        let srcOffset = 0;         // da[r*n + c] — walks sequentially
+        while (r < m) {
+            let dstOffset = r;     // dc[c*m + r] — initial for this row of a
+            let c = 0;
+            while (c < n) {
+                let dc[dstOffset] = da[srcOffset];
+                let srcOffset = srcOffset + 1;
+                let dstOffset = dstOffset + dstStride;
+                let c = c + 1;
+            }
+            let r = r + 1;
+        }
+        return;
+    }
+}

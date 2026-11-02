@@ -1,0 +1,872 @@
+function TensorOps.addV0 2
+push argument 0
+call Tensor.getSize 1
+pop local 1
+push constant 0
+pop local 0
+label WHILE_EXP0
+push local 0
+push local 1
+lt
+not
+if-goto WHILE_END0
+push argument 2
+push local 0
+push argument 0
+push local 0
+call Tensor.get 2
+push argument 1
+push local 0
+call Tensor.get 2
+add
+call Tensor.set 3
+pop temp 0
+push local 0
+push constant 1
+add
+pop local 0
+goto WHILE_EXP0
+label WHILE_END0
+push constant 0
+return
+function TensorOps.addV2 6
+push argument 0
+call Tensor.getData 1
+pop local 0
+push argument 1
+call Tensor.getData 1
+pop local 1
+push argument 2
+call Tensor.getData 1
+pop local 2
+push argument 0
+call Tensor.getSize 1
+pop local 4
+push local 4
+push local 4
+push constant 3
+and
+sub
+pop local 5
+push constant 0
+pop local 3
+label WHILE_EXP0
+push local 3
+push local 5
+lt
+not
+if-goto WHILE_END0
+push local 3
+push local 2
+add
+push local 3
+push local 0
+add
+pop pointer 1
+push that 0
+push local 3
+push local 1
+add
+pop pointer 1
+push that 0
+add
+pop temp 0
+pop pointer 1
+push temp 0
+pop that 0
+push local 3
+push constant 1
+add
+push local 2
+add
+push local 3
+push constant 1
+add
+push local 0
+add
+pop pointer 1
+push that 0
+push local 3
+push constant 1
+add
+push local 1
+add
+pop pointer 1
+push that 0
+add
+pop temp 0
+pop pointer 1
+push temp 0
+pop that 0
+push local 3
+push constant 2
+add
+push local 2
+add
+push local 3
+push constant 2
+add
+push local 0
+add
+pop pointer 1
+push that 0
+push local 3
+push constant 2
+add
+push local 1
+add
+pop pointer 1
+push that 0
+add
+pop temp 0
+pop pointer 1
+push temp 0
+pop that 0
+push local 3
+push constant 3
+add
+push local 2
+add
+push local 3
+push constant 3
+add
+push local 0
+add
+pop pointer 1
+push that 0
+push local 3
+push constant 3
+add
+push local 1
+add
+pop pointer 1
+push that 0
+add
+pop temp 0
+pop pointer 1
+push temp 0
+pop that 0
+push local 3
+push constant 4
+add
+pop local 3
+goto WHILE_EXP0
+label WHILE_END0
+label WHILE_EXP1
+push local 3
+push local 4
+lt
+not
+if-goto WHILE_END1
+push local 3
+push local 2
+add
+push local 3
+push local 0
+add
+pop pointer 1
+push that 0
+push local 3
+push local 1
+add
+pop pointer 1
+push that 0
+add
+pop temp 0
+pop pointer 1
+push temp 0
+pop that 0
+push local 3
+push constant 1
+add
+pop local 3
+goto WHILE_EXP1
+label WHILE_END1
+push constant 0
+return
+function TensorOps.subV0 2
+push argument 0
+call Tensor.getSize 1
+pop local 1
+push constant 0
+pop local 0
+label WHILE_EXP0
+push local 0
+push local 1
+lt
+not
+if-goto WHILE_END0
+push argument 2
+push local 0
+push argument 0
+push local 0
+call Tensor.get 2
+push argument 1
+push local 0
+call Tensor.get 2
+sub
+call Tensor.set 3
+pop temp 0
+push local 0
+push constant 1
+add
+pop local 0
+goto WHILE_EXP0
+label WHILE_END0
+push constant 0
+return
+function TensorOps.subV2 6
+push argument 0
+call Tensor.getData 1
+pop local 0
+push argument 1
+call Tensor.getData 1
+pop local 1
+push argument 2
+call Tensor.getData 1
+pop local 2
+push argument 0
+call Tensor.getSize 1
+pop local 4
+push local 4
+push local 4
+push constant 3
+and
+sub
+pop local 5
+push constant 0
+pop local 3
+label WHILE_EXP0
+push local 3
+push local 5
+lt
+not
+if-goto WHILE_END0
+push local 3
+push local 2
+add
+push local 3
+push local 0
+add
+pop pointer 1
+push that 0
+push local 3
+push local 1
+add
+pop pointer 1
+push that 0
+sub
+pop temp 0
+pop pointer 1
+push temp 0
+pop that 0
+push local 3
+push constant 1
+add
+push local 2
+add
+push local 3
+push constant 1
+add
+push local 0
+add
+pop pointer 1
+push that 0
+push local 3
+push constant 1
+add
+push local 1
+add
+pop pointer 1
+push that 0
+sub
+pop temp 0
+pop pointer 1
+push temp 0
+pop that 0
+push local 3
+push constant 2
+add
+push local 2
+add
+push local 3
+push constant 2
+add
+push local 0
+add
+pop pointer 1
+push that 0
+push local 3
+push constant 2
+add
+push local 1
+add
+pop pointer 1
+push that 0
+sub
+pop temp 0
+pop pointer 1
+push temp 0
+pop that 0
+push local 3
+push constant 3
+add
+push local 2
+add
+push local 3
+push constant 3
+add
+push local 0
+add
+pop pointer 1
+push that 0
+push local 3
+push constant 3
+add
+push local 1
+add
+pop pointer 1
+push that 0
+sub
+pop temp 0
+pop pointer 1
+push temp 0
+pop that 0
+push local 3
+push constant 4
+add
+pop local 3
+goto WHILE_EXP0
+label WHILE_END0
+label WHILE_EXP1
+push local 3
+push local 4
+lt
+not
+if-goto WHILE_END1
+push local 3
+push local 2
+add
+push local 3
+push local 0
+add
+pop pointer 1
+push that 0
+push local 3
+push local 1
+add
+pop pointer 1
+push that 0
+sub
+pop temp 0
+pop pointer 1
+push temp 0
+pop that 0
+push local 3
+push constant 1
+add
+pop local 3
+goto WHILE_EXP1
+label WHILE_END1
+push constant 0
+return
+function TensorOps.mulScalarV0 2
+push argument 0
+call Tensor.getSize 1
+pop local 1
+push constant 0
+pop local 0
+label WHILE_EXP0
+push local 0
+push local 1
+lt
+not
+if-goto WHILE_END0
+push argument 2
+push local 0
+push argument 0
+push local 0
+call Tensor.get 2
+push argument 1
+call Math.multiply 2
+call Tensor.set 3
+pop temp 0
+push local 0
+push constant 1
+add
+pop local 0
+goto WHILE_EXP0
+label WHILE_END0
+push constant 0
+return
+function TensorOps.mulScalarV2 4
+push argument 0
+call Tensor.getData 1
+pop local 0
+push argument 2
+call Tensor.getData 1
+pop local 1
+push argument 0
+call Tensor.getSize 1
+pop local 3
+push constant 0
+pop local 2
+label WHILE_EXP0
+push local 2
+push local 3
+lt
+not
+if-goto WHILE_END0
+push local 2
+push local 1
+add
+push local 2
+push local 0
+add
+pop pointer 1
+push that 0
+push argument 1
+call TensorOps.fastMul 2
+pop temp 0
+pop pointer 1
+push temp 0
+pop that 0
+push local 2
+push constant 1
+add
+pop local 2
+goto WHILE_EXP0
+label WHILE_END0
+push constant 0
+return
+function TensorOps.fastMul 4
+push constant 1
+pop local 3
+push argument 1
+push constant 0
+lt
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push constant 1
+neg
+pop local 3
+push argument 1
+neg
+pop local 2
+goto IF_END0
+label IF_FALSE0
+push argument 1
+pop local 2
+label IF_END0
+push constant 0
+pop local 0
+push argument 0
+pop local 1
+label WHILE_EXP0
+push local 2
+push constant 0
+gt
+not
+if-goto WHILE_END0
+push local 2
+push constant 1
+and
+if-goto IF_TRUE1
+goto IF_FALSE1
+label IF_TRUE1
+push local 0
+push local 1
+add
+pop local 0
+label IF_FALSE1
+push local 1
+push local 1
+add
+pop local 1
+push local 2
+push constant 2
+call Math.divide 2
+pop local 2
+goto WHILE_EXP0
+label WHILE_END0
+push local 3
+push constant 1
+neg
+eq
+if-goto IF_TRUE2
+goto IF_FALSE2
+label IF_TRUE2
+push local 0
+neg
+pop local 0
+label IF_FALSE2
+push local 0
+return
+function TensorOps.divScalarV0 2
+push argument 0
+call Tensor.getSize 1
+pop local 1
+push constant 0
+pop local 0
+label WHILE_EXP0
+push local 0
+push local 1
+lt
+not
+if-goto WHILE_END0
+push argument 2
+push local 0
+push argument 0
+push local 0
+call Tensor.get 2
+push argument 1
+call Math.divide 2
+call Tensor.set 3
+pop temp 0
+push local 0
+push constant 1
+add
+pop local 0
+goto WHILE_EXP0
+label WHILE_END0
+push constant 0
+return
+function TensorOps.divScalarV2 4
+push argument 0
+call Tensor.getData 1
+pop local 0
+push argument 2
+call Tensor.getData 1
+pop local 1
+push argument 0
+call Tensor.getSize 1
+pop local 3
+push constant 0
+pop local 2
+label WHILE_EXP0
+push local 2
+push local 3
+lt
+not
+if-goto WHILE_END0
+push local 2
+push local 1
+add
+push local 2
+push local 0
+add
+pop pointer 1
+push that 0
+push argument 1
+call Math.divide 2
+pop temp 0
+pop pointer 1
+push temp 0
+pop that 0
+push local 2
+push constant 1
+add
+pop local 2
+goto WHILE_EXP0
+label WHILE_END0
+push constant 0
+return
+function TensorOps.matmulV0 7
+push argument 0
+call Tensor.getRows 1
+pop local 0
+push argument 0
+call Tensor.getCols 1
+pop local 1
+push argument 1
+call Tensor.getCols 1
+pop local 2
+push constant 0
+pop local 3
+label WHILE_EXP0
+push local 3
+push local 0
+lt
+not
+if-goto WHILE_END0
+push constant 0
+pop local 4
+label WHILE_EXP1
+push local 4
+push local 2
+lt
+not
+if-goto WHILE_END1
+push constant 0
+pop local 6
+push constant 0
+pop local 5
+label WHILE_EXP2
+push local 5
+push local 1
+lt
+not
+if-goto WHILE_END2
+push local 6
+push argument 0
+push local 3
+push local 5
+call Tensor.at 3
+push argument 1
+push local 5
+push local 4
+call Tensor.at 3
+call Math.multiply 2
+add
+pop local 6
+push local 5
+push constant 1
+add
+pop local 5
+goto WHILE_EXP2
+label WHILE_END2
+push argument 2
+push local 3
+push local 4
+push local 6
+call Tensor.put 4
+pop temp 0
+push local 4
+push constant 1
+add
+pop local 4
+goto WHILE_EXP1
+label WHILE_END1
+push local 3
+push constant 1
+add
+pop local 3
+goto WHILE_EXP0
+label WHILE_END0
+push constant 0
+return
+function TensorOps.matmulV2 14
+push argument 0
+call Tensor.getData 1
+pop local 0
+push argument 1
+call Tensor.getData 1
+pop local 1
+push argument 2
+call Tensor.getData 1
+pop local 2
+push argument 0
+call Tensor.getRows 1
+pop local 3
+push argument 0
+call Tensor.getCols 1
+pop local 4
+push argument 1
+call Tensor.getCols 1
+pop local 5
+push constant 0
+pop local 6
+push constant 0
+pop local 10
+label WHILE_EXP0
+push local 6
+push local 3
+lt
+not
+if-goto WHILE_END0
+push constant 0
+pop local 7
+label WHILE_EXP1
+push local 7
+push local 5
+lt
+not
+if-goto WHILE_END1
+push constant 0
+pop local 9
+push local 10
+pop local 12
+push local 7
+pop local 13
+push constant 0
+pop local 8
+label WHILE_EXP2
+push local 8
+push local 4
+lt
+not
+if-goto WHILE_END2
+push local 9
+push local 12
+push local 0
+add
+pop pointer 1
+push that 0
+push local 13
+push local 1
+add
+pop pointer 1
+push that 0
+call TensorOps.fastMul 2
+add
+pop local 9
+push local 12
+push constant 1
+add
+pop local 12
+push local 13
+push local 5
+add
+pop local 13
+push local 8
+push constant 1
+add
+pop local 8
+goto WHILE_EXP2
+label WHILE_END2
+push local 6
+push local 5
+call Math.multiply 2
+push local 7
+add
+push local 2
+add
+push local 9
+pop temp 0
+pop pointer 1
+push temp 0
+pop that 0
+push local 7
+push constant 1
+add
+pop local 7
+goto WHILE_EXP1
+label WHILE_END1
+push local 10
+push local 4
+add
+pop local 10
+push local 6
+push constant 1
+add
+pop local 6
+goto WHILE_EXP0
+label WHILE_END0
+push constant 0
+return
+function TensorOps.transposeV0 4
+push argument 0
+call Tensor.getRows 1
+pop local 0
+push argument 0
+call Tensor.getCols 1
+pop local 1
+push constant 0
+pop local 2
+label WHILE_EXP0
+push local 2
+push local 0
+lt
+not
+if-goto WHILE_END0
+push constant 0
+pop local 3
+label WHILE_EXP1
+push local 3
+push local 1
+lt
+not
+if-goto WHILE_END1
+push argument 1
+push local 3
+push local 2
+push argument 0
+push local 2
+push local 3
+call Tensor.at 3
+call Tensor.put 4
+pop temp 0
+push local 3
+push constant 1
+add
+pop local 3
+goto WHILE_EXP1
+label WHILE_END1
+push local 2
+push constant 1
+add
+pop local 2
+goto WHILE_EXP0
+label WHILE_END0
+push constant 0
+return
+function TensorOps.transposeV2 9
+push argument 0
+call Tensor.getData 1
+pop local 0
+push argument 1
+call Tensor.getData 1
+pop local 1
+push argument 0
+call Tensor.getRows 1
+pop local 2
+push argument 0
+call Tensor.getCols 1
+pop local 3
+push local 2
+pop local 8
+push constant 0
+pop local 4
+push constant 0
+pop local 6
+label WHILE_EXP0
+push local 4
+push local 2
+lt
+not
+if-goto WHILE_END0
+push local 4
+pop local 7
+push constant 0
+pop local 5
+label WHILE_EXP1
+push local 5
+push local 3
+lt
+not
+if-goto WHILE_END1
+push local 7
+push local 1
+add
+push local 6
+push local 0
+add
+pop pointer 1
+push that 0
+pop temp 0
+pop pointer 1
+push temp 0
+pop that 0
+push local 6
+push constant 1
+add
+pop local 6
+push local 7
+push local 8
+add
+pop local 7
+push local 5
+push constant 1
+add
+pop local 5
+goto WHILE_EXP1
+label WHILE_END1
+push local 4
+push constant 1
+add
+pop local 4
+goto WHILE_EXP0
+label WHILE_END0
+push constant 0
+return

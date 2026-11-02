@@ -1,0 +1,172 @@
+// =============================================================================
+// Tensor.jack  —  CS207 Tensor Library
+// =============================================================================
+// Represents a 2-D (or 1-D) integer tensor stored in row-major flat layout.
+// Fields:
+//   rows, cols : shape
+//   size       : rows * cols  (total elements)
+//   data       : Array of size 16-bit signed words
+//
+// Memory contract:
+//   • new()   allocates this object and the data Array.
+//   • dispose() frees data first, then the object.
+//   • Operations NEVER allocate; the caller always provides an output Tensor.
+// =============================================================================
+
+class Tensor {
+
+    field int rows;
+    field int cols;
+    field int size;
+    field Array data;
+
+    // -------------------------------------------------------------------------
+    // Constructor / Destructor
+    // -------------------------------------------------------------------------
+
+    /** Allocate a rows×cols tensor; all elements initialised to 0. */
+    constructor Tensor new(int r, int c) {
+        let rows = r;
+        let cols = c;
+        let size = r * c;
+        let data = Array.new(size);
+        do Tensor.zeroArray(data, size);
+        return this;
+    }
+
+    /** Helper: zero every word in arr[0..n-1]. */
+    function void zeroArray(Array arr, int n) {
+        var int i;
+        let i = 0;
+        while (i < n) {
+            let arr[i] = 0;
+            let i = i + 1;
+        }
+        return;
+    }
+
+    /** Free data array then this object. */
+    method void dispose() {
+        do data.dispose();
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    // -------------------------------------------------------------------------
+    // Shape accessors
+    // -------------------------------------------------------------------------
+
+    method int getRows() { return rows; }
+    method int getCols() { return cols; }
+    method int getSize() { return size; }
+
+    // -------------------------------------------------------------------------
+    // Element accessors
+    // -------------------------------------------------------------------------
+
+    /** Return element at flat index i (0-based). */
+    method int get(int i) {
+        return data[i];
+    }
+
+    /** Set element at flat index i. */
+    method void set(int i, int v) {
+        let data[i] = v;
+        return;
+    }
+
+    /** Return element at (r, c) row-major. */
+    method int at(int r, int c) {
+        return data[(r * cols) + c];
+    }
+
+    /** Set element at (r, c) row-major. */
+    method void put(int r, int c, int v) {
+        let data[(r * cols) + c] = v;
+        return;
+    }
+
+    // -------------------------------------------------------------------------
+    // Utility
+    // -------------------------------------------------------------------------
+
+    /** Fill every element with value v. */
+    method void fill(int v) {
+        var int i;
+        let i = 0;
+        while (i < size) {
+            let data[i] = v;
+            let i = i + 1;
+        }
+        return;
+    }
+
+    /** Return the backing Array (used by optimised kernels for direct access). */
+    method Array getData() {
+        return data;
+    }
+
+    /**
+     * Element-wise equality check.
+     * Returns true iff this and other have the same shape and every element
+     * is identical.
+     */
+    method boolean equals(Tensor other) {
+        var int i;
+        if (~(rows = other.getRows())) { return false; }
+        if (~(cols = other.getCols())) { return false; }
+        let i = 0;
+        while (i < size) {
+            if (~(data[i] = other.get(i))) { return false; }
+            let i = i + 1;
+        }
+        return true;
+    }
+
+    /** Print shape and all elements to the standard output. */
+    method void print() {
+        var int r, c;
+        do Output.printString("Tensor[");
+        do Output.printInt(rows);
+        do Output.printString("x");
+        do Output.printInt(cols);
+        do Output.printString("]");
+        do Output.println();
+        let r = 0;
+        while (r < rows) {
+            let c = 0;
+            while (c < cols) {
+                do Output.printInt(data[(r * cols) + c]);
+                if (c < (cols - 1)) {
+                    do Output.printString(" ");
+                }
+                let c = c + 1;
+            }
+            do Output.println();
+            let r = r + 1;
+        }
+        return;
+    }
+
+    /** Print shape and first maxElems elements (useful for large tensors). */
+    method void printHead(int maxElems) {
+        var int i, limit;
+        let limit = size;
+        if (maxElems < limit) { let limit = maxElems; }
+        do Output.printString("Tensor[");
+        do Output.printInt(rows);
+        do Output.printString("x");
+        do Output.printInt(cols);
+        do Output.printString("] first ");
+        do Output.printInt(limit);
+        do Output.printString(" elems: ");
+        let i = 0;
+        while (i < limit) {
+            do Output.printInt(data[i]);
+            do Output.printString(" ");
+            let i = i + 1;
+        }
+        do Output.println();
+        return;
+    }
+}

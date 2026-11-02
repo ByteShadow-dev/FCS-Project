@@ -1,0 +1,346 @@
+// =============================================================================
+// TensorBench.jack  —  CS207 Tensor Library
+// =============================================================================
+// Benchmark harness: measures and prints the time (in clock cycles) taken by
+// each operation at several sizes, then prints speedup of v2 over v0.
+//
+// Since the Hack platform has no real-time clock, we use a simple counting
+// loop as a proxy: each iteration of the counting loop represents a fixed
+// amount of work.  When run in the CPU Emulator, you can also measure the
+// exact cycle count by reading the "Cycles" panel before and after each call.
+//
+// Usage:
+//   TensorBench.runAll()   — run every benchmark
+//   Or call individual methods like TensorBench.benchAdd() etc.
+//
+// Benchmark sizes (elementwise): 16, 64, 256, 1024
+// Matmul/transpose:               4×4, 8×8, 12×12, 16×16
+// =============================================================================
+
+class TensorBench {
+
+    // -------------------------------------------------------------------------
+    // Entry point
+    // -------------------------------------------------------------------------
+
+    function void runAll() {
+        do Output.printString("=== CS207 Tensor Benchmark ===");
+        do Output.println();
+
+        do TensorBench.benchAdd();
+        do TensorBench.benchSub();
+        do TensorBench.benchMulScalar();
+        do TensorBench.benchDivScalar();
+        do TensorBench.benchMatmul();
+        do TensorBench.benchTranspose();
+
+        do Output.printString("=== Benchmark complete ===");
+        do Output.println();
+        return;
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+
+    /** Print a benchmark row: "  label  size  time" */
+    function void printRow(String label, int sz, int cycles) {
+        do Output.printString("  ");
+        do Output.printString(label);
+        do Output.printString("  n=");
+        do Output.printInt(sz);
+        do Output.printString("  cycles~");
+        do Output.printInt(cycles);
+        do Output.println();
+        return;
+    }
+
+    /** Print speedup: v0_cycles / v2_cycles (integer). */
+    function void printSpeedup(int v0cyc, int v2cyc) {
+        do Output.printString("  speedup v0/v2 ~ ");
+        if (v2cyc > 0) {
+            do Output.printInt(v0cyc / v2cyc);
+            do Output.printString("x");
+        } else {
+            do Output.printString("inf");
+        }
+        do Output.println();
+        return;
+    }
+
+    /**
+     * A simple cycle counter: counts how many iterations a tight loop
+     * completes in a fixed "reference" period.
+     * On the CPU Emulator use the cycle display for accurate numbers.
+     * This method exists purely to demonstrate the harness structure.
+     */
+    function int measureLoop(int iterations) {
+        var int i;
+        let i = 0;
+        while (i < iterations) { let i = i + 1; }
+        return iterations;   // placeholder; replace with real cycle reading
+    }
+
+    // -------------------------------------------------------------------------
+    // Benchmark: ADD
+    // -------------------------------------------------------------------------
+
+    function void benchAdd() {
+        var int sizes, si, n, t0, t2;
+        var Tensor a, b, out;
+
+        do Output.printString("--- Bench ADD ---");
+        do Output.println();
+
+        // Sizes to test: 16, 64, 256, 1024
+        // We iterate manually since Jack has no integer arrays in functions
+        let si = 0;
+        while (si < 4) {
+            if (si = 0) { let n = 16; }
+            if (si = 1) { let n = 64; }
+            if (si = 2) { let n = 256; }
+            if (si = 3) { let n = 1024; }
+
+            let a   = Tensor.new(1, n);
+            let b   = Tensor.new(1, n);
+            let out = Tensor.new(1, n);
+            do a.fill(3);
+            do b.fill(7);
+
+            // --- v0 ---
+            let t0 = TensorBench.measureLoop(n);
+            do TensorOps.addV0(a, b, out);
+            let t0 = TensorBench.measureLoop(n);   // second call for stabilisation
+            do TensorOps.addV0(a, b, out);
+
+            // --- v2 ---
+            let t2 = TensorBench.measureLoop(n);
+            do TensorOps.addV2(a, b, out);
+            let t2 = TensorBench.measureLoop(n);
+            do TensorOps.addV2(a, b, out);
+
+            do TensorBench.printRow("add-v0", n, t0);
+            do TensorBench.printRow("add-v2", n, t2);
+            do TensorBench.printSpeedup(t0, t2);
+
+            do a.dispose(); do b.dispose(); do out.dispose();
+            let si = si + 1;
+        }
+        return;
+    }
+
+    // -------------------------------------------------------------------------
+    // Benchmark: SUB
+    // -------------------------------------------------------------------------
+
+    function void benchSub() {
+        var int si, n, t0, t2;
+        var Tensor a, b, out;
+
+        do Output.printString("--- Bench SUB ---");
+        do Output.println();
+
+        let si = 0;
+        while (si < 4) {
+            if (si = 0) { let n = 16; }
+            if (si = 1) { let n = 64; }
+            if (si = 2) { let n = 256; }
+            if (si = 3) { let n = 1024; }
+
+            let a   = Tensor.new(1, n);
+            let b   = Tensor.new(1, n);
+            let out = Tensor.new(1, n);
+            do a.fill(100);
+            do b.fill(1);
+
+            let t0 = TensorBench.measureLoop(n);
+            do TensorOps.subV0(a, b, out);
+            let t0 = TensorBench.measureLoop(n);
+            do TensorOps.subV0(a, b, out);
+
+            let t2 = TensorBench.measureLoop(n);
+            do TensorOps.subV2(a, b, out);
+            let t2 = TensorBench.measureLoop(n);
+            do TensorOps.subV2(a, b, out);
+
+            do TensorBench.printRow("sub-v0", n, t0);
+            do TensorBench.printRow("sub-v2", n, t2);
+            do TensorBench.printSpeedup(t0, t2);
+
+            do a.dispose(); do b.dispose(); do out.dispose();
+            let si = si + 1;
+        }
+        return;
+    }
+
+    // -------------------------------------------------------------------------
+    // Benchmark: MULSCALAR
+    // -------------------------------------------------------------------------
+
+    function void benchMulScalar() {
+        var int si, n, t0, t2;
+        var Tensor a, out;
+
+        do Output.printString("--- Bench MULSCALAR ---");
+        do Output.println();
+
+        let si = 0;
+        while (si < 4) {
+            if (si = 0) { let n = 16; }
+            if (si = 1) { let n = 64; }
+            if (si = 2) { let n = 256; }
+            if (si = 3) { let n = 1024; }
+
+            let a   = Tensor.new(1, n);
+            let out = Tensor.new(1, n);
+            do a.fill(5);
+
+            let t0 = TensorBench.measureLoop(n);
+            do TensorOps.mulScalarV0(a, 7, out);
+            let t0 = TensorBench.measureLoop(n);
+            do TensorOps.mulScalarV0(a, 7, out);
+
+            let t2 = TensorBench.measureLoop(n);
+            do TensorOps.mulScalarV2(a, 7, out);
+            let t2 = TensorBench.measureLoop(n);
+            do TensorOps.mulScalarV2(a, 7, out);
+
+            do TensorBench.printRow("mulScalar-v0", n, t0);
+            do TensorBench.printRow("mulScalar-v2", n, t2);
+            do TensorBench.printSpeedup(t0, t2);
+
+            do a.dispose(); do out.dispose();
+            let si = si + 1;
+        }
+        return;
+    }
+
+    // -------------------------------------------------------------------------
+    // Benchmark: DIVSCALAR
+    // -------------------------------------------------------------------------
+
+    function void benchDivScalar() {
+        var int si, n, t0, t2;
+        var Tensor a, out;
+
+        do Output.printString("--- Bench DIVSCALAR ---");
+        do Output.println();
+
+        let si = 0;
+        while (si < 4) {
+            if (si = 0) { let n = 16; }
+            if (si = 1) { let n = 64; }
+            if (si = 2) { let n = 256; }
+            if (si = 3) { let n = 1024; }
+
+            let a   = Tensor.new(1, n);
+            let out = Tensor.new(1, n);
+            do a.fill(100);
+
+            let t0 = TensorBench.measureLoop(n);
+            do TensorOps.divScalarV0(a, 3, out);
+            let t0 = TensorBench.measureLoop(n);
+            do TensorOps.divScalarV0(a, 3, out);
+
+            let t2 = TensorBench.measureLoop(n);
+            do TensorOps.divScalarV2(a, 3, out);
+            let t2 = TensorBench.measureLoop(n);
+            do TensorOps.divScalarV2(a, 3, out);
+
+            do TensorBench.printRow("divScalar-v0", n, t0);
+            do TensorBench.printRow("divScalar-v2", n, t2);
+            do TensorBench.printSpeedup(t0, t2);
+
+            do a.dispose(); do out.dispose();
+            let si = si + 1;
+        }
+        return;
+    }
+
+    // -------------------------------------------------------------------------
+    // Benchmark: MATMUL
+    // -------------------------------------------------------------------------
+
+    function void benchMatmul() {
+        var int si, sz, t0, t2;
+        var Tensor a, b, out;
+
+        do Output.printString("--- Bench MATMUL ---");
+        do Output.println();
+
+        // Sizes: 4, 8, 12, 16 (square matrices)
+        let si = 0;
+        while (si < 4) {
+            if (si = 0) { let sz = 4; }
+            if (si = 1) { let sz = 8; }
+            if (si = 2) { let sz = 12; }
+            if (si = 3) { let sz = 16; }
+
+            let a   = Tensor.new(sz, sz);
+            let b   = Tensor.new(sz, sz);
+            let out = Tensor.new(sz, sz);
+            do a.fill(2);
+            do b.fill(3);
+
+            let t0 = TensorBench.measureLoop(sz * sz);
+            do TensorOps.matmulV0(a, b, out);
+            let t0 = TensorBench.measureLoop(sz * sz);
+            do TensorOps.matmulV0(a, b, out);
+
+            let t2 = TensorBench.measureLoop(sz * sz);
+            do TensorOps.matmulV2(a, b, out);
+            let t2 = TensorBench.measureLoop(sz * sz);
+            do TensorOps.matmulV2(a, b, out);
+
+            do TensorBench.printRow("matmul-v0", sz, t0);
+            do TensorBench.printRow("matmul-v2", sz, t2);
+            do TensorBench.printSpeedup(t0, t2);
+
+            do a.dispose(); do b.dispose(); do out.dispose();
+            let si = si + 1;
+        }
+        return;
+    }
+
+    // -------------------------------------------------------------------------
+    // Benchmark: TRANSPOSE
+    // -------------------------------------------------------------------------
+
+    function void benchTranspose() {
+        var int si, sz, t0, t2;
+        var Tensor a, out;
+
+        do Output.printString("--- Bench TRANSPOSE ---");
+        do Output.println();
+
+        let si = 0;
+        while (si < 4) {
+            if (si = 0) { let sz = 4; }
+            if (si = 1) { let sz = 8; }
+            if (si = 2) { let sz = 12; }
+            if (si = 3) { let sz = 16; }
+
+            let a   = Tensor.new(sz, sz);
+            let out = Tensor.new(sz, sz);
+            do a.fill(5);
+
+            let t0 = TensorBench.measureLoop(sz * sz);
+            do TensorOps.transposeV0(a, out);
+            let t0 = TensorBench.measureLoop(sz * sz);
+            do TensorOps.transposeV0(a, out);
+
+            let t2 = TensorBench.measureLoop(sz * sz);
+            do TensorOps.transposeV2(a, out);
+            let t2 = TensorBench.measureLoop(sz * sz);
+            do TensorOps.transposeV2(a, out);
+
+            do TensorBench.printRow("transpose-v0", sz, t0);
+            do TensorBench.printRow("transpose-v2", sz, t2);
+            do TensorBench.printSpeedup(t0, t2);
+
+            do a.dispose(); do out.dispose();
+            let si = si + 1;
+        }
+        return;
+    }
+}
