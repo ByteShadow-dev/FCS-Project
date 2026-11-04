@@ -1,0 +1,281 @@
+function PolynomialRegression.new 0
+push constant 10
+call Memory.alloc 1
+pop pointer 0
+push argument 1
+pop this 0
+push argument 2
+pop this 1
+push argument 3
+pop this 2
+push argument 4
+pop this 3
+push constant 0
+pop this 4
+push constant 0
+pop this 5
+push constant 1
+push argument 0
+call Tensor.new 2
+pop this 6
+push constant 1
+push argument 0
+call Tensor.new 2
+pop this 7
+push constant 1
+push argument 0
+call Tensor.new 2
+pop this 8
+push constant 1
+push argument 0
+call Tensor.new 2
+pop this 9
+push pointer 0
+return
+function PolynomialRegression.dispose 0
+push argument 0
+pop pointer 0
+push this 6
+call Tensor.dispose 1
+pop temp 0
+push this 7
+call Tensor.dispose 1
+pop temp 0
+push this 8
+call Tensor.dispose 1
+pop temp 0
+push this 9
+call Tensor.dispose 1
+pop temp 0
+push pointer 0
+call Memory.deAlloc 1
+pop temp 0
+push constant 0
+return
+function PolynomialRegression.addPoint 0
+push argument 0
+pop pointer 0
+push this 5
+push this 6
+call Tensor.getCols 1
+lt
+not
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push constant 0
+return
+label IF_FALSE0
+push this 6
+push this 5
+push argument 1
+call Tensor.set 3
+pop temp 0
+push this 7
+push this 5
+push argument 2
+call Tensor.set 3
+pop temp 0
+push this 5
+push constant 1
+add
+pop this 5
+push constant 0
+not
+return
+function PolynomialRegression.predictOne 3
+push argument 0
+pop pointer 0
+push argument 1
+push constant 10
+call Math.divide 2
+push argument 1
+push constant 10
+call Math.divide 2
+call Math.multiply 2
+push constant 10
+call Math.divide 2
+pop local 0
+push this 0
+push local 0
+call Math.multiply 2
+push constant 1000
+call Math.divide 2
+pop local 1
+push this 1
+push argument 1
+call Math.multiply 2
+push constant 1000
+call Math.divide 2
+pop local 2
+push local 1
+push local 2
+add
+push this 2
+add
+return
+function PolynomialRegression.computePredictions 2
+push argument 0
+pop pointer 0
+push constant 0
+pop local 0
+label WHILE_EXP0
+push local 0
+push this 5
+lt
+not
+if-goto WHILE_END0
+push this 6
+push local 0
+call Tensor.get 2
+pop local 1
+push this 8
+push local 0
+push pointer 0
+push local 1
+call PolynomialRegression.predictOne 2
+call Tensor.set 3
+pop temp 0
+push local 0
+push constant 1
+add
+pop local 0
+goto WHILE_EXP0
+label WHILE_END0
+push constant 0
+return
+function PolynomialRegression.step 10
+push argument 0
+pop pointer 0
+push this 5
+push constant 2
+lt
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push constant 0
+return
+label IF_FALSE0
+push pointer 0
+call PolynomialRegression.computePredictions 1
+pop temp 0
+push this 7
+push this 8
+push this 9
+call TensorOps.subV2 3
+pop temp 0
+push constant 0
+pop local 1
+push constant 0
+pop local 2
+push constant 0
+pop local 3
+push constant 0
+pop local 0
+label WHILE_EXP0
+push local 0
+push this 5
+lt
+not
+if-goto WHILE_END0
+push this 6
+push local 0
+call Tensor.get 2
+pop local 7
+push this 9
+push local 0
+call Tensor.get 2
+pop local 9
+push local 7
+push constant 10
+call Math.divide 2
+push local 7
+push constant 10
+call Math.divide 2
+call Math.multiply 2
+push constant 10
+call Math.divide 2
+pop local 8
+push local 1
+push local 8
+push local 9
+call Math.multiply 2
+push constant 1000
+call Math.divide 2
+add
+pop local 1
+push local 2
+push local 7
+push local 9
+call Math.multiply 2
+push constant 1000
+call Math.divide 2
+add
+pop local 2
+push local 3
+push local 9
+add
+pop local 3
+push local 0
+push constant 1
+add
+pop local 0
+goto WHILE_EXP0
+label WHILE_END0
+push this 3
+push local 1
+call Math.multiply 2
+push this 5
+push constant 1000
+call Math.multiply 2
+call Math.divide 2
+pop local 4
+push this 3
+push local 2
+call Math.multiply 2
+push this 5
+push constant 1000
+call Math.multiply 2
+call Math.divide 2
+pop local 5
+push this 3
+push local 3
+call Math.multiply 2
+push this 5
+push constant 1000
+call Math.multiply 2
+call Math.divide 2
+pop local 6
+push this 0
+push local 4
+add
+pop this 0
+push this 1
+push local 5
+add
+pop this 1
+push this 2
+push local 6
+add
+pop this 2
+push this 4
+push constant 1
+add
+pop this 4
+push constant 0
+return
+function PolynomialRegression.getW2 0
+push argument 0
+pop pointer 0
+push this 0
+return
+function PolynomialRegression.getW1 0
+push argument 0
+pop pointer 0
+push this 1
+return
+function PolynomialRegression.getB 0
+push argument 0
+pop pointer 0
+push this 2
+return

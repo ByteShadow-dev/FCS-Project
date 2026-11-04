@@ -64,18 +64,6 @@ label IF_TRUE0
 push constant 0
 return
 label IF_FALSE0
-push argument 1
-push constant 100
-lt
-not
-if-goto IF_TRUE1
-goto IF_FALSE1
-label IF_TRUE1
-push argument 1
-push constant 1000
-call Math.divide 2
-pop argument 1
-label IF_FALSE1
 push this 5
 push this 4
 push argument 1
@@ -108,32 +96,15 @@ return
 function LinearRegression.predictOne 0
 push argument 0
 pop pointer 0
-push argument 1
-push constant 100
-lt
-not
-if-goto IF_TRUE0
-goto IF_FALSE0
-label IF_TRUE0
-push argument 1
-push constant 1000
-call Math.divide 2
-pop argument 1
-label IF_FALSE0
 push this 0
 push argument 1
 call Math.multiply 2
 push this 1
 add
 return
-function LinearRegression.computePredictions 1
+function LinearRegression.computePredictions 2
 push argument 0
 pop pointer 0
-push this 5
-push this 0
-push this 7
-call TensorOps.mulScalarV2 3
-pop temp 0
 push constant 0
 pop local 0
 label WHILE_EXP0
@@ -142,11 +113,15 @@ push this 4
 lt
 not
 if-goto WHILE_END0
-push this 7
-push local 0
-push this 7
+push this 5
 push local 0
 call Tensor.get 2
+pop local 1
+push this 7
+push local 0
+push this 0
+push local 1
+call Math.multiply 2
 push this 1
 add
 call Tensor.set 3
@@ -159,7 +134,7 @@ goto WHILE_EXP0
 label WHILE_END0
 push constant 0
 return
-function LinearRegression.computeMSE 3
+function LinearRegression.computeMSE 4
 push argument 0
 pop pointer 0
 push this 4
@@ -184,6 +159,10 @@ if-goto WHILE_END0
 push this 6
 push local 0
 call Tensor.get 2
+push constant 1000
+call Math.multiply 2
+pop local 3
+push local 3
 push this 7
 push local 0
 call Tensor.get 2
@@ -218,6 +197,7 @@ pop local 2
 label IF_FALSE1
 push local 2
 return
+function LinearRegression.step 9
 function LinearRegression.step 16
 push argument 0
 pop pointer 0
@@ -233,6 +213,10 @@ label IF_FALSE0
 push pointer 0
 call LinearRegression.computePredictions 1
 pop temp 0
+push constant 0
+pop local 3
+push constant 0
+pop local 4
 push this 6
 push this 7
 push this 8

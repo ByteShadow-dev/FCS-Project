@@ -1,22 +1,260 @@
 // =============================================================================
-// Main.jack  —  CS207 Tensor Library  (entry point)
-// =============================================================================
-// The Jack compiler requires exactly one class named Main with a static
-// function named main().
-//
-// This file is the program entry point.  Edit the calls below to run:
-//   • TensorTest.runAll()         — automated correctness checks
-//   • TensorBench.runAll()        — performance benchmarks  (slow: ~5-10 min)
-//   • LinearRegressionDemo.run()  — gradient descent demo on a toy dataset
+// Main.jack — Unified CS207 Tensor & ML Workbench
 // =============================================================================
 
 class Main {
 
     function void main() {
-        // do TensorTest.runAll();         // uncomment to run 38 unit tests first
-        // do TensorBench.runAll();        // uncomment to run full benchmarks (~5-10 min)
-        do LinearRegressionDemo.run();  // gradient descent visual demo
+        var char key;
+        var boolean running;
+        let running = true;
 
+        while (running) {
+            do Screen.clearScreen();
+            do Output.moveCursor(0, 0);
+            do Output.printString("=== CS207 Tensor & ML Workbench ===");
+            do Output.println();
+            do Output.println();
+            do Output.printString("Select Mode:");
+            do Output.println();
+            do Output.printString("  [1] Linear Regression  (y = mx + b)");
+            do Output.println();
+            do Output.printString("  [2] Matrix Operations (3x3)");
+            do Output.println();
+            do Output.printString("  [Q] Quit");
+            do Output.println();
+            do Output.println();
+            do Output.printString("Press Key: ");
+
+            let key = Keyboard.readChar();
+
+            if (key = 49) { do Main.runLinear(); }
+            if (key = 50) { do Main.menuMatrix(); }
+            if ((key = 81) | (key = 113)) { let running = false; }
+        }
+
+        do Screen.clearScreen();
+        do Output.moveCursor(0, 0);
+        do Output.printString("Workbench exited.");
+        return;
+    }
+
+    function void pause() {
+        var char k;
+        do Output.println();
+        do Output.printString("Press any key for menu...");
+        let k = Keyboard.readChar();
+        return;
+    }
+
+    // =========================================================================
+    // 1. Linear Regression Execution & Display
+    // =========================================================================
+
+    function void runLinear() {
+        var LinearRegression model;
+        var int numPoints, i, xInput, yInput;
+
+        do Screen.clearScreen();
+        do Output.moveCursor(0, 0);
+        do Output.printString("--- Linear Regression ---");
+        do Output.println();
+        
+        do Output.printString("Enter number of points (2 to 10): ");
+        let numPoints = Keyboard.readInt("");
+
+        if (numPoints < 2) {
+            do Output.printString("Error: At least 2 points required.");
+            do Output.println();
+            do Main.pause();
+            return;
+        }
+
+        // Start initM=0, initB=0 for neutral convergence
+        let model = LinearRegression.new(numPoints, 0, 0, 1);
+
+        let i = 0;
+        while (i < numPoints) {
+            do Screen.clearScreen();
+            do Output.moveCursor(0, 0);
+            do Output.printString("--- Input Point ");
+            do Output.printInt(i + 1);
+            do Output.printString(" of ");
+            do Output.printInt(numPoints);
+            do Output.printString(" ---");
+            do Output.println();
+
+            do Output.printString("  x: ");
+            let xInput = Keyboard.readInt("");
+            do Output.printString("  y: ");
+            let yInput = Keyboard.readInt("");
+
+            do model.addPoint(xInput, yInput);
+            let i = i + 1;
+        }
+
+        // Train 100 steps to reach optimal slope & intercept
+        do model.train(100, 0);
+
+        do Screen.clearScreen();
+        do Output.moveCursor(0, 0);
+        do Output.printString("--- Linear Regression Result ---");
+        do Output.println();
+        do Output.println();
+        do Output.printString("Fitted Line Equation:");
+        do Output.println();
+        do Output.printString("  y = (");
+        do Output.printInt(model.getM());
+        do Output.printString("/1k)x + (");
+        do Output.printInt(model.getB());
+        do Output.printString("/1k)");
+        do Output.println();
+
+        do model.dispose();
+        do Main.pause();
+        return;
+    }
+
+    // =========================================================================
+    // 2. Matrix Submenu & Dynamic Input Handler
+    // =========================================================================
+
+    function void menuMatrix() {
+        var char key;
+        var Tensor A, B, Res, Evals;
+        var boolean ok;
+        var int tr;
+
+        do Screen.clearScreen();
+        do Output.moveCursor(0, 0);
+        do Output.printString("--- Matrix Operations (3x3) ---");
+        do Output.println();
+        do Output.printString("Select Operation:");
+        do Output.println();
+        do Output.printString("  [1] Add  (A + B)");
+        do Output.println();
+        do Output.printString("  [2] Sub  (A - B)");
+        do Output.println();
+        do Output.printString("  [3] Mult (A * B)");
+        do Output.println();
+        do Output.printString("  [4] Transpose (A^T)");
+        do Output.println();
+        do Output.printString("  [5] Inverse   (A^-1)");
+        do Output.println();
+        do Output.printString("  [6] Trace & Eigenvalues");
+        do Output.println();
+        do Output.println();
+        do Output.printString("Press Key: ");
+
+        let key = Keyboard.readChar();
+
+        // 2-Matrix operations (Add, Sub, Mult)
+        if ((key = 49) | (key = 50) | (key = 51)) {
+            let A = Tensor.new(3, 3);
+            let B = Tensor.new(3, 3);
+            let Res = Tensor.new(3, 3);
+
+            do Main.readMatrixInput(A, 1);
+            do Main.readMatrixInput(B, 2);
+
+            do Screen.clearScreen();
+            do Output.moveCursor(0, 0);
+
+            if (key = 49) {
+                do Matrix3x3.add(A, B, Res);
+                do Output.printString("--- Result: A + B ---");
+            }
+            if (key = 50) {
+                do Matrix3x3.subtract(A, B, Res);
+                do Output.printString("--- Result: A - B ---");
+            }
+            if (key = 51) {
+                do Matrix3x3.multiply(A, B, Res);
+                do Output.printString("--- Result: A * B ---");
+            }
+            do Output.println();
+            do Res.print();
+
+            do A.dispose();
+            do B.dispose();
+            do Res.dispose();
+            do Main.pause();
+            return;
+        }
+
+        // 1-Matrix operations (Transpose, Inverse, Trace/Eigenvalues)
+        if ((key = 52) | (key = 53) | (key = 54)) {
+            let A = Tensor.new(3, 3);
+            let Res = Tensor.new(3, 3);
+            do Main.readMatrixInput(A, 1);
+
+            do Screen.clearScreen();
+            do Output.moveCursor(0, 0);
+
+            if (key = 52) {
+                do Matrix3x3.transpose(A, Res);
+                do Output.printString("--- Transpose A^T ---");
+                do Output.println();
+                do Res.print();
+            }
+            if (key = 53) {
+                let ok = Matrix3x3.invert(A, Res);
+                if (ok) {
+                    do Output.printString("--- Inverse A^-1 ---");
+                    do Output.println();
+                    do Res.print();
+                } else {
+                    do Output.printString("Matrix is Singular (det = 0)!");
+                }
+            }
+            if (key = 54) {
+                let tr = Matrix3x3.trace(A);
+                let Evals = Tensor.new(1, 3);
+                do Matrix3x3.computeEigenvalues(A, Evals);
+                do Output.printString("Trace: ");
+                do Output.printInt(tr);
+                do Output.printString("/1k");
+                do Output.println();
+                do Output.printString("Eigenvalues:");
+                do Output.println();
+                do Evals.print();
+                do Evals.dispose();
+            }
+
+            do A.dispose();
+            do Res.dispose();
+            do Main.pause();
+            return;
+        }
+
+        return;
+    }
+
+    /** Prompts user to fill a 3x3 matrix element by element */
+    function void readMatrixInput(Tensor m, int matNum) {
+        var int r, c, val;
+        do Screen.clearScreen();
+        do Output.moveCursor(0, 0);
+        do Output.printString("--- Enter Matrix ");
+        do Output.printInt(matNum);
+        do Output.printString(" (Values x1000) ---");
+        do Output.println();
+
+        let r = 0;
+        while (r < 3) {
+            let c = 0;
+            while (c < 3) {
+                do Output.printString("Cell [");
+                do Output.printInt(r);
+                do Output.printString("][");
+                do Output.printInt(c);
+                do Output.printString("]: ");
+                let val = Keyboard.readInt("");
+                do m.put(r, c, val);
+                let c = c + 1;
+            }
+            let r = r + 1;
+        }
         return;
     }
 }

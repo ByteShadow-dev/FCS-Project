@@ -1,0 +1,105 @@
+// =============================================================================
+// LogisticRegression.jack — Binary Classification via Piece-Wise Sigmoid
+// =============================================================================
+
+class LogisticRegression {
+    field int w;              // weight * 1000
+    field int b;              // bias * 1000
+    field int lr;             // learning rate alpha * 1000
+    field int iteration;
+    field int n;
+
+    field Tensor xs;          // 1xn inputs (scaled x * 1000)
+    field Tensor ys;          // 1xn binary targets (0 or 1000)
+    field Tensor yhat;        // 1xn predicted probabilities (0 to 1000)
+    field Tensor err;         // 1xn residual errors
+
+    constructor LogisticRegression new(int capacity, int initW, int initB, int learningRate) {
+        let w = initW;
+        let b = initB;
+        let lr = learningRate;
+        let iteration = 0;
+        let n = 0;
+
+        let xs   = Tensor.new(1, capacity);
+        let ys   = Tensor.new(1, capacity);
+        let yhat = Tensor.new(1, capacity);
+        let err  = Tensor.new(1, capacity);
+        return this;
+    }
+
+    method void dispose() {
+        do xs.dispose();
+        do ys.dispose();
+        do yhat.dispose();
+        do err.dispose();
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    method boolean addPoint(int x, int y) {
+        if (~(n < xs.getCols())) { return false; }
+        do xs.set(n, x);
+        do ys.set(n, y); // 0 or 1000
+        let n = n + 1;
+        return true;
+    }
+
+    /** Piecewise linear approximation of Sigmoid returning [0, 1000] */
+    function int sigmoid(int z) {
+        var int prob;
+        if (z < -4000) { return 0; }
+        if (z > 4000)  { return 1000; }
+        
+        let prob = 500 + Math.divide(z, 8);
+        return prob;
+    }
+
+    method int predictOne(int x) {
+        var int z;
+        let z = Math.divide(Math.multiply(w, x), 1000) + b;
+        return LogisticRegression.sigmoid(z);
+    }
+
+    method void computePredictions() {
+        var int i;
+        let i = 0;
+        while (i < n) {
+            do yhat.set(i, predictOne(xs.get(i)));
+            let i = i + 1;
+        }
+        return;
+    }
+
+    method int step() {
+        var int i, sumXE, sumE, dw, db, x, e;
+
+        if (n < 2) { return 0; }
+
+        do computePredictions();
+        do TensorOps.subV2(ys, yhat, err);
+
+        let sumXE = 0;
+        let sumE  = 0;
+        let i = 0;
+        while (i < n) {
+            let x = xs.get(i);
+            let e = err.get(i);
+            let sumXE = sumXE + Math.divide(Math.multiply(x, e), 1000);
+            let sumE  = sumE  + e;
+            let i = i + 1;
+        }
+
+        let dw = Math.divide(Math.multiply(lr, sumXE), Math.multiply(n, 1000));
+        let db = Math.divide(Math.multiply(lr, sumE),  Math.multiply(n, 1000));
+
+        let w = w + dw;
+        let b = b + db;
+        let iteration = iteration + 1;
+
+        return 0;
+    }
+
+    method int getW() { return w; }
+    method int getB() { return b; }
+}
