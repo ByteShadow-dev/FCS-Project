@@ -33,7 +33,7 @@ class LinearRegressionDemo {
         do Output.printString("Initial: ");
         do model.print();
 
-        // Train: 100 steps, print every 25
+        // Train: 100 steps, print every 25th iteration
         do Output.printString("Training (100 steps, lr=0.025):");
         do Output.println();
         do model.train(100, 25);

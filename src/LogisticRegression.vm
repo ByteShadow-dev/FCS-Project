@@ -244,6 +244,11 @@ push argument 0
 pop pointer 0
 push this 0
 return
+function LogisticRegression.getM 0
+push argument 0
+pop pointer 0
+push this 0
+return
 function LogisticRegression.getB 0
 push argument 0
 pop pointer 0

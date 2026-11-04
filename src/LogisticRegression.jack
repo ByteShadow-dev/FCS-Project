@@ -101,5 +101,6 @@ class LogisticRegression {
     }
 
     method int getW() { return w; }
+    method int getM() { return w; }
     method int getB() { return b; }
 }

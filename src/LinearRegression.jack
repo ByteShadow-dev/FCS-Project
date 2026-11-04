@@ -39,9 +39,15 @@ class LinearRegression {
         return;
     }
 
-    /** Adds raw unscaled integer point (x, y) */
+    /** Adds raw or scaled point (x, y). Automatically normalizes to internal scale. */
     method boolean addPoint(int x, int y) {
         if (~(n < xs.getCols())) { return false; }
+        if (~(x < 100)) {
+            let x = Math.divide(x, 1000);
+        }
+        if (y < 100) {
+            let y = Math.multiply(y, 1000);
+        }
         do xs.set(n, x);
         do ys.set(n, y);
         let n = n + 1;
@@ -57,22 +63,25 @@ class LinearRegression {
 
     /** Evaluates single point y = mx + b (returns scaled by 1000) */
     method int predictOne(int x) {
+        if (~(x < 100)) {
+            let x = Math.divide(x, 1000);
+        }
         return (slopeM * x) + interceptB;
     }
 
     method void computePredictions() {
-        var int i, xVal;
+        var int i;
+        do TensorOps.mulScalarV2(xs, slopeM, yhat);
         let i = 0;
         while (i < n) {
-            let xVal = xs.get(i);
-            do yhat.set(i, (slopeM * xVal) + interceptB);
+            do yhat.set(i, yhat.get(i) + interceptB);
             let i = i + 1;
         }
         return;
     }
 
     method int computeMSE() {
-        var int i, e, sumSq, targetScaled;
+        var int i, e, sumSq;
         if (n = 0) { return 0; }
         let sumSq = 0;
         let i = 0;
@@ -96,7 +105,7 @@ class LinearRegression {
 
         do computePredictions();
 
-        do TensorOps.subV0(ys, yhat, err);
+        do TensorOps.subV2(ys, yhat, err);
 
         let n2 = n + n;
         let halfMeanXE = 0;
@@ -136,8 +145,8 @@ class LinearRegression {
         let dm = Math.divide(halfMeanXE, divM);
         let db = Math.divide(meanE, divB);
 
-        let slopeM     = slopeM + db;
-        let interceptB = interceptB + dm;
+        let slopeM     = slopeM + dm;
+        let interceptB = interceptB + db;
         let iteration  = iteration + 1;
 
         do computePredictions();
@@ -153,6 +162,8 @@ class LinearRegression {
         return ys.get(i);
     }
 
+    method int getM()         { return slopeM; }
+    method int getB()         { return interceptB; }
     method int getSlope()     { return slopeM; }
     method int getIntercept() { return interceptB; }
     method int getLR()        { return lr; }
@@ -173,17 +184,33 @@ class LinearRegression {
     }
 
     method void train(int maxIter, int printEvery) {
-        var int i, mse;
+        var int i, mse, j;
         let i = 0;
         while (i < maxIter) {
             let mse = step();
             if (printEvery > 0) {
                 if (((i + 1) - (((i + 1) / printEvery) * printEvery)) = 0) {
-                    do Output.printString("  step=");
+                    do Output.printString("Step ");
                     do Output.printInt(i + 1);
-                    do Output.printString("  MSE=");
-                    do Output.printInt(mse);
-                    do Output.printString("/1000");
+                    do Output.printString(" (m=");
+                    do Output.printInt(slopeM);
+                    do Output.printString("/1k, b=");
+                    do Output.printInt(interceptB);
+                    do Output.printString("/1k):");
+                    do Output.println();
+
+                    let j = 0;
+                    while (j < n) {
+                        do Output.printString("  pt ");
+                        do Output.printInt(j + 1);
+                        do Output.printString(": actual y=");
+                        do Output.printInt(ys.get(j));
+                        do Output.printString("/1k, pred y=");
+                        do Output.printInt(yhat.get(j));
+                        do Output.printString("/1k");
+                        do Output.println();
+                        let j = j + 1;
+                    }
                     do Output.println();
                 }
             }

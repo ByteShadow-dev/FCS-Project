@@ -70,8 +70,8 @@ class Main {
             return;
         }
 
-        // Start initM=0, initB=0 for neutral convergence
-        let model = LinearRegression.new(numPoints, 0, 0, 1);
+        // Start initM=0, initB=0, lr=25 for fast and stable convergence
+        let model = LinearRegression.new(numPoints, 0, 0, 25);
 
         let i = 0;
         while (i < numPoints) {
@@ -93,15 +93,16 @@ class Main {
             let i = i + 1;
         }
 
-        // Train 100 steps to reach optimal slope & intercept
-        do model.train(100, 0);
-
         do Screen.clearScreen();
         do Output.moveCursor(0, 0);
-        do Output.printString("--- Linear Regression Result ---");
+        do Output.printString("--- Linear Regression Training ---");
         do Output.println();
+
+        // Train 100 steps, showing actual vs predicted y for every 25th iteration
+        do model.train(100, 25);
+
         do Output.println();
-        do Output.printString("Fitted Line Equation:");
+        do Output.printString("--- Fitted Line Equation ---");
         do Output.println();
         do Output.printString("  y = (");
         do Output.printInt(model.getM());
