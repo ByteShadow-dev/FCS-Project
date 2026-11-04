@@ -77,37 +77,64 @@ class LinearRegression {
         let sumSq = 0;
         let i = 0;
         while (i < n) {
-            let targetScaled = ys.get(i) * 1000;
-            let e = (targetScaled - yhat.get(i)) / 100;
-            let sumSq = sumSq + (e * e);
+            let e = Math.divide(ys.get(i) - yhat.get(i), 100);
+            let sumSq = sumSq + Math.divide(Math.multiply(e, e), n);
             let i = i + 1;
         }
-        return sumSq / n;
+        if (sumSq < 3276) {
+            let sumSq = Math.multiply(sumSq, 10);
+        }
+        return sumSq;
     }
 
     method int step() {
-        var int i, x, e, sumErr, sumXErr, dm, db, mse, yScaled;
+        var int i, x, e, q, r, term, n2;
+        var int halfMeanXE, sumE, remE, meanE;
+        var int divM, divB, dm, db, mse;
 
         if (n < 2) { return 0; }
 
         do computePredictions();
 
-        let sumErr  = 0;
-        let sumXErr = 0;
+        do TensorOps.subV0(ys, yhat, err);
+
+        let n2 = n + n;
+        let halfMeanXE = 0;
+        let sumE = 0;
+        let remE = 0;
         let i = 0;
 
         while (i < n) {
             let x = xs.get(i);
-            let yScaled = ys.get(i) * 1000;
-            let e = yScaled - yhat.get(i);
+            let e = err.get(i);
 
-            let sumErr  = sumErr + e;
-            let sumXErr = sumXErr + (x * e);
+            // Safely compute x * e / (2 * n) without 16-bit signed overflow
+            let q = Math.divide(e, n2);
+            let r = e - Math.multiply(q, n2);
+            let term = Math.multiply(x, q) + Math.divide(Math.multiply(x, r), n2);
+            let halfMeanXE = halfMeanXE + term;
+
+            // Accumulate errors for intercept gradient
+            let q = Math.divide(e, n);
+            let r = e - Math.multiply(q, n);
+            let sumE = sumE + q;
+            let remE = remE + r;
+
             let i = i + 1;
         }
 
-        let db = (sumErr / n) / 10;
-        let dm = (sumXErr / n) / 10;
+        let meanE = sumE + Math.divide(remE, n);
+
+        // Gradient updates:
+        // dm = 2 * (lr / 1000) * mean(x * err) = (lr / 250) * halfMeanXE = halfMeanXE / (250 / lr)
+        // db = 2 * (lr / 1000) * mean(err)     = (lr / 500) * meanE      = meanE / (500 / lr)
+        let divM = Math.divide(250, lr);
+        let divB = Math.divide(500, lr);
+        if (divM = 0) { let divM = 1; }
+        if (divB = 0) { let divB = 1; }
+
+        let dm = Math.divide(halfMeanXE, divM);
+        let db = Math.divide(meanE, divB);
 
         let slopeM     = slopeM + db;
         let interceptB = interceptB + dm;
@@ -118,8 +145,14 @@ class LinearRegression {
         return mse;
     }
 
-    method int getM()         { return slopeM; }
-    method int getB()         { return interceptB; }
+    method int getX(int i) {
+        return Math.multiply(xs.get(i), 1000);
+    }
+
+    method int getY(int i) {
+        return ys.get(i);
+    }
+
     method int getSlope()     { return slopeM; }
     method int getIntercept() { return interceptB; }
     method int getLR()        { return lr; }

@@ -14,21 +14,21 @@ class LinearRegressionDemo {
         do Output.moveCursor(0, 0);
         do Output.printString("=== Linear Regression Demo ===");
         do Output.println();
-        do Output.printString("Dataset: 8 points, true y = 1.1x + 1.0");
+        do Output.printString("Dataset: 8 points (scaled x1000)");
         do Output.println();
 
         // Allocate model: capacity=8, initM=500 (0.5), initB=0, lr=25 (0.025)
         let model = LinearRegression.new(8, 500, 0, 25);
 
         // Load dataset (×1000)
-        do model.addPoint(1000, 2100);
-        do model.addPoint(2000, 3000);
-        do model.addPoint(3000, 4200);
-        do model.addPoint(4000, 5100);
-        do model.addPoint(5000, 5800);
-        do model.addPoint(6000, 7000);
-        do model.addPoint(7000, 7600);
-        do model.addPoint(8000, 8900);
+        do model.addPoint(1000, 2000);
+        do model.addPoint(2000, 4000);
+        do model.addPoint(3000, 6000);
+        do model.addPoint(4000, 8000);
+        do model.addPoint(5000, 10000);
+        do model.addPoint(6000, 12000);
+        do model.addPoint(7000, 14000);
+        do model.addPoint(8000, 16000);
 
         do Output.printString("Initial: ");
         do model.print();
@@ -49,40 +49,25 @@ class LinearRegressionDemo {
         return;
     }
 
-    /** Print predictions vs. true y for each data point. */
+    /** Print predictions vs. true y for each data point directly from model. */
     function void printPredictions(LinearRegression model) {
-        var int i;
-        var Array testX, testY;
-        var int pred;
-
-        // Re-create the test data for display
-        let testX = Array.new(8);
-        let testY = Array.new(8);
-        let testX[0] = 1000; let testY[0] = 2100;
-        let testX[1] = 2000; let testY[1] = 3000;
-        let testX[2] = 3000; let testY[2] = 4200;
-        let testX[3] = 4000; let testY[3] = 5100;
-        let testX[4] = 5000; let testY[4] = 5800;
-        let testX[5] = 6000; let testY[5] = 7000;
-        let testX[6] = 7000; let testY[6] = 7600;
-        let testX[7] = 8000; let testY[7] = 8900;
-
+        var int i, n, x, y, pred;
+        let n = model.getN();
         let i = 0;
-        while (i < 8) {
-            let pred = model.predictOne(testX[i]);
+        while (i < n) {
+            let x = model.getX(i);
+            let y = model.getY(i);
+            let pred = model.predictOne(x);
             do Output.printString("  x=");
-            do Output.printInt(testX[i]);
+            do Output.printInt(x);
             do Output.printString("/1k  y=");
-            do Output.printInt(testY[i]);
+            do Output.printInt(y);
             do Output.printString("/1k  yhat=");
             do Output.printInt(pred);
             do Output.printString("/1k");
             do Output.println();
             let i = i + 1;
         }
-
-        do testX.dispose();
-        do testY.dispose();
         return;
     }
 }

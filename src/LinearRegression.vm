@@ -174,6 +174,8 @@ push local 2
 push local 1
 push local 1
 call Math.multiply 2
+push this 4
+call Math.divide 2
 add
 pop local 2
 push local 0
@@ -183,10 +185,20 @@ pop local 0
 goto WHILE_EXP0
 label WHILE_END0
 push local 2
-push this 4
-call Math.divide 2
+push constant 3276
+lt
+if-goto IF_TRUE1
+goto IF_FALSE1
+label IF_TRUE1
+push local 2
+push constant 10
+call Math.multiply 2
+pop local 2
+label IF_FALSE1
+push local 2
 return
 function LinearRegression.step 9
+function LinearRegression.step 16
 push argument 0
 pop pointer 0
 push this 4
@@ -205,6 +217,21 @@ push constant 0
 pop local 3
 push constant 0
 pop local 4
+push this 6
+push this 7
+push this 8
+call TensorOps.subV0 3
+pop temp 0
+push this 4
+push this 4
+add
+pop local 6
+push constant 0
+pop local 7
+push constant 0
+pop local 8
+push constant 0
+pop local 9
 push constant 0
 pop local 0
 label WHILE_EXP0
@@ -217,52 +244,104 @@ push this 5
 push local 0
 call Tensor.get 2
 pop local 1
-push this 6
+push this 8
 push local 0
 call Tensor.get 2
-push constant 1000
-call Math.multiply 2
-pop local 8
-push local 8
-push this 7
-push local 0
-call Tensor.get 2
-sub
 pop local 2
-push local 3
 push local 2
-add
+push local 6
+call Math.divide 2
 pop local 3
-push local 4
-push local 1
 push local 2
+push local 3
+push local 6
 call Math.multiply 2
-add
+sub
 pop local 4
+push local 1
+push local 3
+call Math.multiply 2
+push local 1
+push local 4
+call Math.multiply 2
+push local 6
+call Math.divide 2
+add
+pop local 5
+push local 7
+push local 5
+add
+pop local 7
+push local 2
+push this 4
+call Math.divide 2
+pop local 3
+push local 2
+push local 3
+push this 4
+call Math.multiply 2
+sub
+pop local 4
+push local 8
+push local 3
+add
+pop local 8
+push local 9
+push local 4
+add
+pop local 9
 push local 0
 push constant 1
 add
 pop local 0
 goto WHILE_EXP0
 label WHILE_END0
-push local 3
+push local 8
+push local 9
 push this 4
 call Math.divide 2
-push constant 10
+add
+pop local 10
+push constant 250
+push this 2
 call Math.divide 2
-pop local 6
-push local 4
-push this 4
+pop local 11
+push constant 500
+push this 2
 call Math.divide 2
-push constant 10
+pop local 12
+push local 11
+push constant 0
+eq
+if-goto IF_TRUE1
+goto IF_FALSE1
+label IF_TRUE1
+push constant 1
+pop local 11
+label IF_FALSE1
+push local 12
+push constant 0
+eq
+if-goto IF_TRUE2
+goto IF_FALSE2
+label IF_TRUE2
+push constant 1
+pop local 12
+label IF_FALSE2
+push local 7
+push local 11
 call Math.divide 2
-pop local 5
+pop local 13
+push local 10
+push local 12
+call Math.divide 2
+pop local 14
 push this 0
-push local 6
+push local 13
 add
 pop this 0
 push this 1
-push local 5
+push local 14
 add
 pop this 1
 push this 3
@@ -274,18 +353,24 @@ call LinearRegression.computePredictions 1
 pop temp 0
 push pointer 0
 call LinearRegression.computeMSE 1
-pop local 7
-push local 7
+pop local 15
+push local 15
 return
-function LinearRegression.getM 0
+function LinearRegression.getX 0
 push argument 0
 pop pointer 0
-push this 0
+push this 5
+push argument 1
+call Tensor.get 2
+push constant 1000
+call Math.multiply 2
 return
-function LinearRegression.getB 0
+function LinearRegression.getY 0
 push argument 0
 pop pointer 0
-push this 1
+push this 6
+push argument 1
+call Tensor.get 2
 return
 function LinearRegression.getSlope 0
 push argument 0
