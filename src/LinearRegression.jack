@@ -1,49 +1,19 @@
 // =============================================================================
-// LinearRegression.jack  —  CS207 Tensor Library
-// =============================================================================
-// Simple linear regression (ŷ = m·x + b) trained via full-batch gradient
-// descent.  All vector arithmetic is delegated to TensorOps so that the
-// naive and optimised kernels from TensorOps.jack are exercised here.
-//
-// Because the Hack platform uses 16-bit signed integers, all values are
-// scaled by SCALE = 1000 internally (i.e. 1.234 is stored as 1234).
-// The caller passes and reads scaled integers.
-//
-// Key formulas (MSE loss = (1/n)·Σ(yᵢ − ŷᵢ)²):
-//   ∂L/∂m = −(2/n) · Σ xᵢ·(yᵢ − ŷᵢ)
-//   ∂L/∂b = −(2/n) · Σ  (yᵢ − ŷᵢ)
-//   m ← m − α·∂L/∂m
-//   b ← b − α·∂L/∂b
-//
-// Fields:
-//   slopeM   : current slope  m   (scaled ×1000)
-//   interceptB: current intercept b (scaled ×1000)
-//   lr       : learning rate α     (scaled ×1000, e.g. 10 = 0.010)
-//   iteration: number of steps taken
-//   n        : number of data points
-//   xs, ys   : data arrays (Tensor, 1×n, scaled ×1000)
-//   yhat     : predictions  (Tensor, 1×n, reused each step)
-//   err      : residuals    (Tensor, 1×n, reused each step)
-//
-// Scale convention:
-//   All user-visible values (coordinates, slope, intercept, MSE, α) are
-//   signed integers that represent the true value ×1000.
-//   Example: x=3.5 → xs.set(i, 3500).  α=0.01 → lr=10 (not 10000, because
-//   we divide by 1000 during the gradient update to avoid overflow).
+// LinearRegression.jack — Fixed Precision Linear Regression (CS207)
 // =============================================================================
 
 class LinearRegression {
 
-    field int slopeM;        // m  ×1000
-    field int interceptB;    // b  ×1000
-    field int lr;            // learning rate α ×1000
+    field int slopeM;        // m * 1000
+    field int interceptB;    // b * 1000
+    field int lr;            // learning rate step size
     field int iteration;
 
-    field int n;             // number of data points
-    field Tensor xs;         // 1×n, values ×1000
-    field Tensor ys;         // 1×n, values ×1000
-    field Tensor yhat;       // 1×n, scratch: predictions
-    field Tensor err;        // 1×n, scratch: residuals
+    field int n;              // number of data points
+    field Tensor xs;          // 1xn unscaled x inputs
+    field Tensor ys;          // 1xn unscaled y targets
+    field Tensor yhat;        // 1xn scratch predictions (x1000)
+    field Tensor err;         // 1xn scratch residuals (x1000)
 
     constructor LinearRegression new(int capacity, int initM, int initB, int learningRate) {
         let slopeM     = initM;
@@ -60,7 +30,6 @@ class LinearRegression {
         return this;
     }
 
-    /** Free all tensors and the object. */
     method void dispose() {
         do xs.dispose();
         do ys.dispose();
@@ -70,11 +39,9 @@ class LinearRegression {
         return;
     }
 
+    /** Adds raw unscaled integer point (x, y) */
     method boolean addPoint(int x, int y) {
         if (~(n < xs.getCols())) { return false; }
-        if (~(x < 100)) {
-            let x = Math.divide(x, 1000);
-        }
         do xs.set(n, x);
         do ys.set(n, y);
         let n = n + 1;
@@ -88,73 +55,71 @@ class LinearRegression {
 
     method int getN() { return n; }
 
+    /** Evaluates single point y = mx + b (returns scaled by 1000) */
     method int predictOne(int x) {
-        if (~(x < 100)) {
-            let x = Math.divide(x, 1000);
-        }
-        return Math.multiply(slopeM, x) + interceptB;
+        return (slopeM * x) + interceptB;
     }
 
     method void computePredictions() {
-        var int i;
-        do TensorOps.mulScalarV2(xs, slopeM, yhat);
+        var int i, xVal;
         let i = 0;
         while (i < n) {
-            do yhat.set(i, yhat.get(i) + interceptB);
+            let xVal = xs.get(i);
+            do yhat.set(i, (slopeM * xVal) + interceptB);
             let i = i + 1;
         }
         return;
     }
 
     method int computeMSE() {
-        var int i, e, sumSq;
+        var int i, e, sumSq, targetScaled;
         if (n = 0) { return 0; }
         let sumSq = 0;
         let i = 0;
         while (i < n) {
-            let e = Math.divide(ys.get(i) - yhat.get(i), 10);
-            let sumSq = sumSq + Math.multiply(e, e);
+            let targetScaled = ys.get(i) * 1000;
+            let e = (targetScaled - yhat.get(i)) / 100;
+            let sumSq = sumSq + (e * e);
             let i = i + 1;
         }
-        return Math.divide(sumSq, n);
+        return sumSq / n;
     }
 
     method int step() {
-        var int i, meanXE, meanE, dm, db, mse, x, e, q, r, div;
+        var int i, x, e, sumErr, sumXErr, dm, db, mse, yScaled;
 
         if (n < 2) { return 0; }
 
         do computePredictions();
 
-        do TensorOps.subV0(ys, yhat, err);
-
-        let meanXE = 0;
-        let meanE  = 0;
+        let sumErr  = 0;
+        let sumXErr = 0;
         let i = 0;
+
         while (i < n) {
             let x = xs.get(i);
-            let e = err.get(i);
-            let q = Math.divide(e, n);
-            let r = e - Math.multiply(q, n);
-            let meanXE = meanXE + Math.multiply(x, q) + Math.divide(Math.multiply(x, r), n);
-            let meanE  = meanE  + q;
+            let yScaled = ys.get(i) * 1000;
+            let e = yScaled - yhat.get(i);
+
+            let sumErr  = sumErr + e;
+            let sumXErr = sumXErr + (x * e);
             let i = i + 1;
         }
 
-        let div = Math.divide(500, lr);
-        if (div = 0) { let div = 1; }
-        let dm = Math.divide(meanXE, div);
-        let db = Math.divide(meanE, div);
+        let db = (sumErr / n) / 10;
+        let dm = (sumXErr / n) / 10;
 
-        let slopeM     = slopeM     + dm;
-        let interceptB = interceptB + db;
-        let iteration  = iteration  + 1;
+        let slopeM     = slopeM + db;
+        let interceptB = interceptB + dm;
+        let iteration  = iteration + 1;
 
         do computePredictions();
         let mse = computeMSE();
         return mse;
     }
 
+    method int getM()         { return slopeM; }
+    method int getB()         { return interceptB; }
     method int getSlope()     { return slopeM; }
     method int getIntercept() { return interceptB; }
     method int getLR()        { return lr; }
@@ -162,6 +127,7 @@ class LinearRegression {
 
     method void setLR(int newLR) { let lr = newLR; return; }
 
+    /** Prints model summary to Hack VM output screen */
     method void print() {
         do Output.printString("LinearRegression: m=");
         do Output.printInt(slopeM);
