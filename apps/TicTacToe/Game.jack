@@ -1,0 +1,310 @@
+// =============================================================================
+// Game.jack - two-player tic-tac-toe on a 3x3 matrix board
+// =============================================================================
+// Controls:
+//   Arrow keys : move cursor (wraps around)
+//   Space      : place X/O
+//   Q          : quit
+// After a win or draw, Space starts the next round.  The starting player
+// alternates each round, and the match score is kept.
+// =============================================================================
+
+class Game {
+
+    field Board board;
+    field int cursorR;
+    field int cursorC;
+    field int turn;          // 1 = X, -1 = O
+    field int starter;
+    field int scoreX;
+    field int scoreO;
+    field int draws;
+    field int state;         // 0 = playing, 1 = round over
+    field boolean actionLatch;
+    field boolean hudDirty;
+
+    constructor Game new() {
+        let board = Board.new();
+        let cursorR = 1;
+        let cursorC = 1;
+        let turn = 1;
+        let starter = 1;
+        let scoreX = 0;
+        let scoreO = 0;
+        let draws = 0;
+        let state = 0;
+        let actionLatch = false;
+        let hudDirty = true;
+        return this;
+    }
+
+    method void dispose() {
+        do board.dispose();
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    method void run() {
+        var char key;
+        var boolean running;
+        var boolean pressed;
+        var boolean action;
+
+        let running = true;
+        do Screen.clearScreen();
+        do drawAll();
+        do drawHud();
+
+        while (running) {
+            let key = Keyboard.keyPressed();
+
+            if ((key = 81) | (key = 113)) {
+                let running = false;
+            }
+
+            let pressed = (key = 32) | (key = 128);
+            let action = false;
+            if (pressed & (~actionLatch)) {
+                let action = true;
+            }
+            let actionLatch = pressed;
+
+            if (state = 0) {
+                if (key = 130) {
+                    if (cursorC > 0) {
+                        let cursorC = cursorC - 1;
+                    } else {
+                        let cursorC = 2;
+                    }
+                    let hudDirty = true;
+                }
+                if (key = 132) {
+                    if (cursorC < 2) {
+                        let cursorC = cursorC + 1;
+                    } else {
+                        let cursorC = 0;
+                    }
+                    let hudDirty = true;
+                }
+                if (key = 131) {
+                    if (cursorR > 0) {
+                        let cursorR = cursorR - 1;
+                    } else {
+                        let cursorR = 2;
+                    }
+                    let hudDirty = true;
+                }
+                if (key = 133) {
+                    if (cursorR < 2) {
+                        let cursorR = cursorR + 1;
+                    } else {
+                        let cursorR = 0;
+                    }
+                    let hudDirty = true;
+                }
+                if (action) {
+                    do placeMark();
+                }
+            } else {
+                if (action) {
+                    do newRound();
+                }
+            }
+
+            do drawAll();
+            if (hudDirty) {
+                do drawHud();
+                let hudDirty = false;
+            }
+            do Sys.wait(25);
+        }
+
+        do Screen.clearScreen();
+        return;
+    }
+
+    method void placeMark() {
+        var int w;
+
+        if (board.place(cursorR, cursorC, turn)) {
+            let w = board.getWinner();
+            if (w = 0) {
+                if (board.isFull()) {
+                    let state = 1;
+                    let draws = draws + 1;
+                } else {
+                    let turn = -turn;
+                }
+            } else {
+                let state = 1;
+                if (w = 1) {
+                    let scoreX = scoreX + 1;
+                } else {
+                    let scoreO = scoreO + 1;
+                }
+            }
+            let hudDirty = true;
+        }
+        return;
+    }
+
+    method void newRound() {
+        do board.reset();
+        let cursorR = 1;
+        let cursorC = 1;
+        let starter = -starter;
+        let turn = starter;
+        let state = 0;
+        let hudDirty = true;
+        return;
+    }
+
+    method int cellX(int c) {
+        return 136 + (c * 80);
+    }
+
+    method int cellY(int r) {
+        return 48 + (r * 64);
+    }
+
+    method void drawAll() {
+        do drawCells();
+        do drawGrid();
+        if (~(board.getWinner() = 0)) {
+            do drawWinLine();
+        }
+        if (state = 0) {
+            do drawCursor();
+        }
+        return;
+    }
+
+    method void drawCells() {
+        var int r, c;
+        let r = 0;
+        while (r < 3) {
+            let c = 0;
+            while (c < 3) {
+                do drawCell(r, c);
+                let c = c + 1;
+            }
+            let r = r + 1;
+        }
+        return;
+    }
+
+    method void drawCell(int r, int c) {
+        var int x1, y1, x2, y2, mark;
+
+        let x1 = cellX(c);
+        let y1 = cellY(r);
+        let x2 = x1 + 80;
+        let y2 = y1 + 64;
+
+        do Screen.setColor(false);
+        do Screen.drawRectangle(x1 + 2, y1 + 2, x2 - 2, y2 - 2);
+
+        let mark = board.get(r, c);
+        if (mark = 1) {
+            do Screen.setColor(true);
+            do Screen.drawLine(x1 + 14, y1 + 14, x2 - 14, y2 - 14);
+            do Screen.drawLine(x2 - 14, y1 + 14, x1 + 14, y2 - 14);
+        }
+        if (mark = -1) {
+            do Screen.setColor(true);
+            do Screen.drawCircle(x1 + 40, y1 + 32, 22);
+        }
+        return;
+    }
+
+    method void drawGrid() {
+        do Screen.setColor(true);
+        do Screen.drawLine(136, 48, 136, 240);
+        do Screen.drawLine(216, 48, 216, 240);
+        do Screen.drawLine(296, 48, 296, 240);
+        do Screen.drawLine(376, 48, 376, 240);
+        do Screen.drawLine(136, 48, 376, 48);
+        do Screen.drawLine(136, 112, 376, 112);
+        do Screen.drawLine(136, 176, 376, 176);
+        do Screen.drawLine(136, 240, 376, 240);
+        return;
+    }
+
+    method void drawCursor() {
+        var int x1, y1, x2, y2;
+
+        let x1 = cellX(cursorC);
+        let y1 = cellY(cursorR);
+        let x2 = x1 + 80;
+        let y2 = y1 + 64;
+
+        do Screen.setColor(true);
+        do Screen.drawLine(x1 + 6, y1 + 6, x2 - 6, y1 + 6);
+        do Screen.drawLine(x1 + 6, y2 - 6, x2 - 6, y2 - 6);
+        do Screen.drawLine(x1 + 6, y1 + 6, x1 + 6, y2 - 6);
+        do Screen.drawLine(x2 - 6, y1 + 6, x2 - 6, y2 - 6);
+        return;
+    }
+
+    method void drawWinLine() {
+        var int line;
+        let line = board.getWinLine();
+        do Screen.setColor(true);
+        if (line = 1) { do Screen.drawLine(140, 80, 372, 80); }
+        if (line = 2) { do Screen.drawLine(140, 144, 372, 144); }
+        if (line = 3) { do Screen.drawLine(140, 208, 372, 208); }
+        if (line = 4) { do Screen.drawLine(176, 52, 176, 236); }
+        if (line = 5) { do Screen.drawLine(256, 52, 256, 236); }
+        if (line = 6) { do Screen.drawLine(336, 52, 336, 236); }
+        if (line = 7) { do Screen.drawLine(144, 56, 368, 232); }
+        if (line = 8) { do Screen.drawLine(368, 56, 144, 232); }
+        return;
+    }
+
+    method void drawHud() {
+        do Output.moveCursor(0, 0);
+        do Output.printString("TIC TAC TOE   X: ");
+        do Output.printInt(scoreX);
+        do Output.printString("   O: ");
+        do Output.printInt(scoreO);
+        do Output.printString("   DRAW: ");
+        do Output.printInt(draws);
+        do Output.printString("            ");
+
+        do Output.moveCursor(1, 0);
+        do Output.printString("TURN: ");
+        if (turn = 1) {
+            do Output.printString("X");
+        } else {
+            do Output.printString("O");
+        }
+        do Output.printString("   CURSOR: ");
+        do Output.printInt(cursorR + 1);
+        do Output.printString(",");
+        do Output.printInt(cursorC + 1);
+        do Output.printString("   [SPACE] place            ");
+
+        do Output.moveCursor(2, 0);
+        do Output.printString("MATRIX 3x3   TRACE: ");
+        do Output.printInt(board.getTrace());
+        do Output.printString("   DET: ");
+        do Output.printInt(board.getDet());
+        do Output.printString("   [Q] quit            ");
+
+        do Output.moveCursor(3, 0);
+        if (state = 0) {
+            do Output.printString("ARROWS: move   SPACE: place   Q: quit            ");
+        } else {
+            if (board.getWinner() = 1) {
+                do Output.printString("X WINS!   [SPACE] next round                    ");
+            } else {
+                if (board.getWinner() = -1) {
+                    do Output.printString("O WINS!   [SPACE] next round                    ");
+                } else {
+                    do Output.printString("DRAW!   [SPACE] next round                    ");
+                }
+            }
+        }
+        return;
+    }
+}
