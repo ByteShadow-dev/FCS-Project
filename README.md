@@ -73,6 +73,10 @@ to launch `VMEmulator.bat` after a successful build.
 3. Click the emulated screen once to focus it.
 4. Set the speed to **Fast**, then click **Run**.
 
+The build script also copies the nand2tetris `OS/*.vm` files into the output
+folder, so `Sys.init` is always present even if the emulator's built-in OS is
+unavailable.
+
 The emulator runs `Main.main` from the loaded folder. Application builds exclude
 `src/Main.jack` so that the app's `Main` is the only entry point.
 

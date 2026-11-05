@@ -109,6 +109,15 @@ if (-not $compiler) {
     exit 1
 }
 
+# --- stage the nand2tetris OS so the emulator can boot Sys.init -------------
+$osDir = Join-Path (Split-Path -Parent $compiler) "OS"
+if (Test-Path -LiteralPath $osDir) {
+    Get-ChildItem -LiteralPath $osDir -Filter *.vm | Copy-Item -Destination $buildDir -Force
+} else {
+    Write-Host ""
+    Write-Host "OS folder not found next to JackCompiler; relying on the emulator's built-in OS." -ForegroundColor Yellow
+}
+
 Write-Host "Compiling $buildDir"
 Write-Host "  using $compiler"
 & $compiler $buildDir
