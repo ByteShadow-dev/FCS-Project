@@ -1,0 +1,173 @@
+// =============================================================================
+// Board.jack - tic-tac-toe board stored as a 3x3 matrix
+// =============================================================================
+// Cell values:  1 = X,  -1 = O,  0 = empty.
+//
+// Matrix3x3 is used directly for the board analysis:
+//   rowSums = board * ones        (each row sum repeated across the row)
+//   colSums = ones  * board       (each column sum repeated down the column)
+//   trace(board)                  main diagonal
+//   trace(board * antiIdentity)   anti-diagonal
+// A line of three X's has sum 3; three O's has sum -3.
+// =============================================================================
+
+class Board {
+
+    field Tensor cells;      // 3x3 board
+    field Tensor ones;       // 3x3 all ones
+    field Tensor rowSums;    // cells * ones
+    field Tensor colSums;    // ones * cells
+    field Tensor anti;       // 3x3 anti-identity
+    field Tensor temp;       // cells * anti
+    field int moves;
+    field int winner;        // 1 = X, -1 = O, 0 = none
+    field int winLine;       // 1..3 rows, 4..6 cols, 7 main diag, 8 anti diag
+    field int traceVal;
+    field int detVal;
+
+    constructor Board new() {
+        let cells = Tensor.new(3, 3);
+        let ones = Tensor.new(3, 3);
+        do ones.fill(1);
+        let rowSums = Tensor.new(3, 3);
+        let colSums = Tensor.new(3, 3);
+        let anti = Tensor.new(3, 3);
+        do anti.put(0, 2, 1);
+        do anti.put(1, 1, 1);
+        do anti.put(2, 0, 1);
+        let temp = Tensor.new(3, 3);
+        let moves = 0;
+        let winner = 0;
+        let winLine = 0;
+        let traceVal = 0;
+        let detVal = 0;
+        do analyze();
+        return this;
+    }
+
+    method void dispose() {
+        do cells.dispose();
+        do ones.dispose();
+        do rowSums.dispose();
+        do colSums.dispose();
+        do anti.dispose();
+        do temp.dispose();
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    method void reset() {
+        do cells.fill(0);
+        let moves = 0;
+        let winner = 0;
+        let winLine = 0;
+        do analyze();
+        return;
+    }
+
+    method int get(int r, int c) {
+        return cells.at(r, c);
+    }
+
+    method boolean isEmpty(int r, int c) {
+        return cells.at(r, c) = 0;
+    }
+
+    /** Place a mark; returns false if the cell is already occupied. */
+    method boolean place(int r, int c, int mark) {
+        if (~(cells.at(r, c) = 0)) {
+            return false;
+        }
+        do cells.put(r, c, mark);
+        let moves = moves + 1;
+        do analyze();
+        return true;
+    }
+
+    method boolean isFull() {
+        return moves > 8;
+    }
+
+    method int getMoves() {
+        return moves;
+    }
+
+    method int getWinner() {
+        return winner;
+    }
+
+    method int getWinLine() {
+        return winLine;
+    }
+
+    method int getTrace() {
+        return traceVal;
+    }
+
+    method int getDet() {
+        return detVal;
+    }
+
+    method void analyze() {
+        var int r, c, s;
+
+        do Matrix3x3.multiply(cells, ones, rowSums);
+        do Matrix3x3.multiply(ones, cells, colSums);
+        do Matrix3x3.multiply(cells, anti, temp);
+
+        let winner = 0;
+        let winLine = 0;
+
+        let r = 0;
+        while (r < 3) {
+            let s = rowSums.at(r, 0);
+            if (s = 3) {
+                let winner = 1;
+                let winLine = r + 1;
+            }
+            if (s = -3) {
+                let winner = -1;
+                let winLine = r + 1;
+            }
+            let r = r + 1;
+        }
+
+        let c = 0;
+        while (c < 3) {
+            let s = colSums.at(0, c);
+            if (s = 3) {
+                let winner = 1;
+                let winLine = c + 4;
+            }
+            if (s = -3) {
+                let winner = -1;
+                let winLine = c + 4;
+            }
+            let c = c + 1;
+        }
+
+        let s = Matrix3x3.trace(cells);
+        if (s = 3) {
+            let winner = 1;
+            let winLine = 7;
+        }
+        if (s = -3) {
+            let winner = -1;
+            let winLine = 7;
+        }
+
+        let s = Matrix3x3.trace(temp);
+        if (s = 3) {
+            let winner = 1;
+            let winLine = 8;
+        }
+        if (s = -3) {
+            let winner = -1;
+            let winLine = 8;
+        }
+
+        let traceVal = Matrix3x3.trace(cells);
+        let detVal = Matrix3x3.determinant(cells);
+        return;
+    }
+}
