@@ -1,0 +1,15 @@
+// =============================================================================
+// Main.jack - Cannon application entry point
+// =============================================================================
+
+class Main {
+
+    function void main() {
+        var Game game;
+
+        let game = Game.new();
+        do game.run();
+        do game.dispose();
+        return;
+    }
+}

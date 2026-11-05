@@ -1,0 +1,310 @@
+// =============================================================================
+// Game.jack - Cannon: aim with a learned linear model
+// =============================================================================
+// Goal: choose a power that lands the shot on the moving target.
+//
+// The library's LinearRegression learns the mapping from launch power to
+// landing x from shots already taken.  The marker under the ground shows the
+// model's prediction for the current power, so the model becomes a real aiming
+// aid as the game goes on.
+//
+// Controls:
+//   Left / Right : change power
+//   Space        : fire
+//   Q            : quit
+// =============================================================================
+
+class Game {
+
+    field Projectile ball;
+    field AimModel model;
+
+    field int power;
+    field int targetX;
+    field int score;
+    field int shots;
+    field int seed;
+    field int state;            // 0 = aiming, 1 = flying, 2 = game over
+    field boolean showBall;
+    field boolean actionLatch;
+    field boolean hudDirty;
+    field int predX;
+    field boolean predDrawn;
+
+    constructor Game new() {
+        let ball = Projectile.new();
+        let model = AimModel.new(16);
+        let power = 9;
+        let targetX = 200;
+        let score = 0;
+        let shots = 0;
+        let seed = 0;
+        let state = 0;
+        let showBall = false;
+        let actionLatch = false;
+        let hudDirty = true;
+        let predX = 0;
+        let predDrawn = false;
+        do nextTarget();
+        return this;
+    }
+
+    method void dispose() {
+        do ball.dispose();
+        do model.dispose();
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    method void run() {
+        var char key;
+        var boolean running;
+        var boolean pressed;
+        var boolean action;
+
+        let running = true;
+        do Screen.clearScreen();
+        do drawStatic();
+        do drawHud();
+
+        while (running) {
+            let key = Keyboard.keyPressed();
+
+            if ((key = 81) | (key = 113)) {
+                let running = false;
+            }
+
+            // Edge-trigger Space/Enter so holding the key does not autofire.
+            let pressed = (key = 32) | (key = 128);
+            let action = false;
+            if (pressed & (~actionLatch)) {
+                let action = true;
+            }
+            let actionLatch = pressed;
+
+            if (state = 0) {
+                if (key = 130) {
+                    if (power > 0) {
+                        let power = power - 1;
+                    }
+                    let hudDirty = true;
+                }
+                if (key = 132) {
+                    if (power < 18) {
+                        let power = power + 1;
+                    }
+                    let hudDirty = true;
+                }
+                if (action) {
+                    do fire();
+                }
+            }
+
+            if (state = 1) {
+                do ball.erase();
+                do ball.step();
+                if (~ball.isActive()) {
+                    do resolveShot();
+                }
+            }
+
+            if (state = 2) {
+                if (action) {
+                    do resetGame();
+                }
+            }
+
+            do drawStatic();
+            if (showBall) {
+                do ball.draw();
+            }
+            do updateMarker();
+            if (hudDirty) {
+                do drawHud();
+                let hudDirty = false;
+            }
+            do Sys.wait(25);
+        }
+
+        do Screen.clearScreen();
+        return;
+    }
+
+    method void fire() {
+        do eraseMarker();
+        do ball.erase();
+        do ball.launch(power);
+        let showBall = true;
+        let state = 1;
+        let hudDirty = true;
+        return;
+    }
+
+    method void resolveShot() {
+        var int landing;
+
+        let landing = ball.getX();
+        do model.observe(power, landing);
+        let shots = shots + 1;
+        if (Math.abs(landing - targetX) < 17) {
+            let score = score + 1;
+        }
+        let hudDirty = true;
+
+        // Hold the landing on screen briefly so the shot is readable.
+        do drawStatic();
+        do ball.draw();
+        do drawHud();
+        do Sys.wait(400);
+
+        do ball.erase();
+        let showBall = false;
+
+        if (shots > 9) {
+            let state = 2;
+            do drawGameOver();
+        } else {
+            let state = 0;
+            do nextTarget();
+            do eraseMarker();
+        }
+        return;
+    }
+
+    method void resetGame() {
+        do Screen.clearScreen();
+        let power = 9;
+        let score = 0;
+        let shots = 0;
+        let state = 0;
+        let showBall = false;
+        let actionLatch = true;
+        let hudDirty = true;
+        let predDrawn = false;
+        do model.reset();
+        do nextTarget();
+        do drawStatic();
+        do drawHud();
+        let hudDirty = false;
+        return;
+    }
+
+    /** Pick the next target without allocating (deterministic pseudo-random). */
+    method void nextTarget() {
+        do eraseTarget();
+        let seed = seed + 137;
+        let seed = seed - (Math.divide(seed, 384) * 384);
+        let targetX = 64 + seed;
+        let hudDirty = true;
+        return;
+    }
+
+    method void eraseTarget() {
+        do Screen.setColor(false);
+        do Screen.drawRectangle(targetX - 16, 232, targetX + 16, 240);
+        return;
+    }
+
+    method void drawStatic() {
+        // Ground.
+        do Screen.setColor(true);
+        do Screen.drawLine(0, 240, 511, 240);
+
+        // Cannon.
+        do Screen.drawRectangle(16, 216, 32, 240);
+
+        // Target.
+        do Screen.drawRectangle(targetX - 16, 232, targetX + 16, 240);
+
+        // Power bar background.
+        do Screen.setColor(false);
+        do Screen.drawRectangle(300, 48, 420, 56);
+
+        // Power bar fill.
+        do Screen.setColor(true);
+        do Screen.drawRectangle(300, 48, 300 + (power * 6), 56);
+        return;
+    }
+
+    method void updateMarker() {
+        var int p;
+
+        if ((state = 0) & model.hasPrediction()) {
+            let p = model.predict(power);
+            if (p < 0) {
+                let p = 0;
+            }
+            if (p > 511) {
+                let p = 511;
+            }
+            if ((~predDrawn) | (~(p = predX))) {
+                if (predDrawn) {
+                    do Screen.setColor(false);
+                    do Screen.drawLine(predX, 244, predX, 252);
+                }
+                do Screen.setColor(true);
+                do Screen.drawLine(p, 244, p, 252);
+                let predX = p;
+                let predDrawn = true;
+            }
+        } else {
+            do eraseMarker();
+        }
+        return;
+    }
+
+    method void eraseMarker() {
+        if (predDrawn) {
+            do Screen.setColor(false);
+            do Screen.drawLine(predX, 244, predX, 252);
+            let predDrawn = false;
+        }
+        return;
+    }
+
+    method void drawHud() {
+        var int p;
+
+        do Output.moveCursor(0, 0);
+        do Output.printString("CANNON   SCORE: ");
+        do Output.printInt(score);
+        do Output.printString("/10   SHOTS: ");
+        do Output.printInt(shots);
+        do Output.printString("        ");
+
+        do Output.moveCursor(1, 0);
+        do Output.printString("POWER: ");
+        do Output.printInt(power);
+        do Output.printString("   PRED: ");
+        if ((state = 0) & model.hasPrediction()) {
+            let p = model.predict(power);
+            if (p < 0) {
+                let p = 0;
+            }
+            if (p > 511) {
+                let p = 511;
+            }
+            do Output.printInt(p);
+        } else {
+            do Output.printString("---");
+        }
+        do Output.printString("        ");
+
+        do Output.moveCursor(2, 0);
+        do Output.printString("MODEL: m=");
+        do Output.printInt(model.getSlope());
+        do Output.printString(" b=");
+        do Output.printInt(model.getIntercept());
+        do Output.printString(" n=");
+        do Output.printInt(model.getCount());
+        do Output.printString("        ");
+        return;
+    }
+
+    method void drawGameOver() {
+        do Output.moveCursor(3, 0);
+        do Output.printString("GAME OVER - press SPACE to restart   ");
+        return;
+    }
+}
+

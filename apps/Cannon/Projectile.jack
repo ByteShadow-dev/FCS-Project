@@ -1,0 +1,88 @@
+// =============================================================================
+// Projectile.jack - one cannon shot (Cannon game)
+// =============================================================================
+// The shot uses simple integer physics:
+//   x = x + vx
+//   y = y + vy
+//   vy = vy + 1          (gravity)
+// The horizontal velocity is the player's power, so the landing x is a linear
+// function of power.  That linear relationship is what AimModel learns.
+// =============================================================================
+
+class Projectile {
+
+    field int x;
+    field int y;
+    field int vx;
+    field int vy;
+    field boolean active;
+    field boolean drawn;
+
+    constructor Projectile new() {
+        let x = 24;
+        let y = 220;
+        let vx = 0;
+        let vy = 0;
+        let active = false;
+        let drawn = false;
+        return this;
+    }
+
+    method void dispose() {
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    /** Start a shot from the cannon with the given horizontal power. */
+    method void launch(int power) {
+        let x = 24;
+        let y = 220;
+        let vx = power;
+        let vy = -12;
+        let active = true;
+        return;
+    }
+
+    /** Remove the current ball from the screen. */
+    method void erase() {
+        if (drawn) {
+            do Screen.setColor(false);
+            do Screen.drawCircle(x, y, 3);
+            let drawn = false;
+        }
+        return;
+    }
+
+    /** Advance one frame.  Deactivates when the shot reaches the ground. */
+    method void step() {
+        if (active) {
+            let x = x + vx;
+            let y = y + vy;
+            let vy = vy + 1;
+            if ((y > 239) | (x > 511) | (x < 0)) {
+                let active = false;
+            }
+        }
+        return;
+    }
+
+    /** Draw the ball at its current position. */
+    method void draw() {
+        do Screen.setColor(true);
+        do Screen.drawCircle(x, y, 3);
+        let drawn = true;
+        return;
+    }
+
+    method int getX() {
+        return x;
+    }
+
+    method int getY() {
+        return y;
+    }
+
+    method boolean isActive() {
+        return active;
+    }
+}

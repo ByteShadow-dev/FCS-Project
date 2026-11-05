@@ -1,0 +1,77 @@
+// =============================================================================
+// AimModel.jack - learned power-to-landing model for Cannon
+// =============================================================================
+// This is the game's bridge to the library's LinearRegression.  It learns
+//
+//     landingX = m * power + b
+//
+// from shots that have already been fired.  The observed data stays in a
+// small integer range so every 16-bit product is safe:
+//
+//     x = power          (0..18)
+//     y = landingX + 100 (>= 100, so addPoint does not rescale it)
+//
+// The +100 offset only exists to keep y above the library's auto-scaling
+// threshold; predict() subtracts it again.
+// =============================================================================
+
+class AimModel {
+
+    field LinearRegression model;
+    field int count;
+
+    constructor AimModel new(int capacity) {
+        // initB = 124 = cannon start x (24) + 100 offset.
+        // initM = 0: the model learns the power slope from the shots.
+        // lr = 5: stable for this small input scale.
+        let model = LinearRegression.new(capacity, 0, 124, 5);
+        let count = 0;
+        return this;
+    }
+
+    method void dispose() {
+        do model.dispose();
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    /** Forget all shots (used when the game restarts). */
+    method void reset() {
+        do model.clearPoints();
+        let count = 0;
+        return;
+    }
+
+    /** Add one observed shot and refit the line. */
+    method void observe(int power, int landingX) {
+        if (model.addPoint(power, landingX + 100)) {
+            let count = count + 1;
+            // LinearRegression.step() needs two points before it can fit.
+            if (count > 1) {
+                do model.train(150, 0);
+            }
+        }
+        return;
+    }
+
+    method boolean hasPrediction() {
+        return count > 1;
+    }
+
+    /** Predicted landing x for the given power. */
+    method int predict(int power) {
+        return model.predictOne(power) - 100;
+    }
+
+    method int getSlope() {
+        return model.getM();
+    }
+
+    method int getIntercept() {
+        return model.getB() - 100;
+    }
+
+    method int getCount() {
+        return count;
+    }
+}
