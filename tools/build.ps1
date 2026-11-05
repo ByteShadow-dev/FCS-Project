@@ -8,7 +8,7 @@
 #
 # Examples:
 #   .\tools\build.ps1                              # build apps/Cannon
-#   .\tools\build.ps1 -App apps/MatrixPuzzle       # build the second game
+#   .\tools\build.ps1 -App apps/TicTacToe          # build the second game
 #   .\tools\build.ps1 -App src                     # build the workbench demo
 #   .\tools\build.ps1 -JackCompiler "C:\nand2tetris\tools\JackCompiler.bat"
 # =============================================================================
