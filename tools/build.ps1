@@ -109,13 +109,17 @@ if (-not $compiler) {
     exit 1
 }
 
-# --- stage the nand2tetris OS so the emulator can boot Sys.init -------------
+# --- stage only the Sys.vm bootstrap; let the emulator supply the built-in OS
+# Without Sys.vm the emulator cannot start the program at Sys.init.  Copying
+# the whole OS forces it to execute the (slow) VM implementation, so we copy
+# just the bootstrap and allow the emulator's fast built-in OS for the rest.
 $osDir = Join-Path (Split-Path -Parent $compiler) "OS"
-if (Test-Path -LiteralPath $osDir) {
-    Get-ChildItem -LiteralPath $osDir -Filter *.vm | Copy-Item -Destination $buildDir -Force
+$sysVm = Join-Path $osDir "Sys.vm"
+if (Test-Path -LiteralPath $sysVm) {
+    Copy-Item -LiteralPath $sysVm -Destination $buildDir -Force
 } else {
     Write-Host ""
-    Write-Host "OS folder not found next to JackCompiler; relying on the emulator's built-in OS." -ForegroundColor Yellow
+    Write-Host "Sys.vm not found next to JackCompiler; relying on the emulator's built-in OS." -ForegroundColor Yellow
 }
 
 Write-Host "Compiling $buildDir"
